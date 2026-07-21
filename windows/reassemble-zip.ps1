@@ -4,7 +4,7 @@ so no single file exceeds GitHub's 100MB blob limit) back into the real
 cttc-windows-deploy.zip, then extracts it next to this script.
 
 Usage: from a PowerShell prompt, in the same directory as the chunks:
-  powershell -ExecutionPolicy Bypass -File .\prepare-deployment.ps1
+  powershell -ExecutionPolicy Bypass -File .\reassemble-zip.ps1
 
 Run this once after cloning/pulling; it produces the actual deployment
 bundle (CTTC Setup.exe, image/, keys/, deploy.ps1, README-WINDOWS.md) in a

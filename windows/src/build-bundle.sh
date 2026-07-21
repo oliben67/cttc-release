@@ -2,7 +2,7 @@
 # Rebuilds releases/windows/cttc-windows-deploy.zip from source, then splits
 # it into <100MB releases/windows/cttc-windows-deploy.zip.partNNN chunks --
 # the zip itself is well over GitHub's 100MB single-blob limit, so only the
-# chunks (plus prepare-deployment.ps1, which reassembles them) get committed.
+# chunks (plus reassemble-zip.ps1, which reassembles them) get committed.
 #
 # The zip ships four things:
 #   1. CTTC Setup.exe    - from app/dist (npm run dist:win), not rebuilt here
@@ -77,5 +77,5 @@ ls "$windows_dir"/cttc-windows-deploy.zip.part* | xargs -n1 basename
 
 echo ""
 echo "Chunks are in $windows_dir -- commit cttc-windows-deploy.zip.part* (not the"
-echo "zip itself, which is gitignored). Reassemble with prepare-deployment.ps1."
+echo "zip itself, which is gitignored). Reassemble with reassemble-zip.ps1."
 docker rmi cttc-server:latest > /dev/null 2>&1 || true
