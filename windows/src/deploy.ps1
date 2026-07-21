@@ -15,16 +15,18 @@ Usage: right-click this file -> "Run with PowerShell", or from a PowerShell
 prompt:
   powershell -ExecutionPolicy Bypass -File .\deploy.ps1
   powershell -ExecutionPolicy Bypass -File .\deploy.ps1 `
-    -SshTarget deploy@docker-host.example.com -SshKey C:\keys\id_ed25519 `
+    -SshUser deploy -SshHost docker-host.example.com -SshKey C:\keys\id_ed25519 `
     -RemoteDir cttc-server -RemotePort 8765
 
 Every parameter is optional and falls back to a bundled default -- pass
--SshTarget (and, if it's not the bundled deploy key, -SshKey) to point this
-same bundle at a different Docker-enabled host without editing the script.
+-SshUser/-SshHost (and, if it's not the bundled deploy key, -SshKey) to
+point this same bundle at a different Docker-enabled host without editing
+the script.
 #>
 
 param(
-  [string]$SshTarget = "oliviersteck@192.168.1.138",
+  [string]$SshUser = "oliviersteck",
+  [string]$SshHost = "192.168.1.138",
   [string]$SshKey,
   [string]$RemoteDir = "cttc-server",       # relative to that account's home dir
   [int]$RemotePort = 8765
@@ -39,10 +41,10 @@ $cttcDir = Join-Path $env:USERPROFILE ".cttc"
 $configPath = Join-Path $cttcDir "connection.json"
 
 # -- deployment target: the Docker-enabled host that runs the server
-# container. Override via -SshTarget/-SshKey/-RemoteDir/-RemotePort instead
-# of editing this file; $keyPath defaults to the bundled deploy key unless
-# -SshKey points at a different one (e.g. a key for a different host).
-$sshTarget = $SshTarget
+# container. Override via -SshUser/-SshHost/-SshKey/-RemoteDir/-RemotePort
+# instead of editing this file; $keyPath defaults to the bundled deploy key
+# unless -SshKey points at a different one (e.g. a key for a different host).
+$sshTarget = "$SshUser@$SshHost"
 $remoteDir = $RemoteDir
 $remotePort = $RemotePort
 $keyPath = if ($SshKey) { $SshKey } else { Join-Path $root "keys\cttc_deploy" }
