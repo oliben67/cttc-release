@@ -1,16 +1,18 @@
 <#
 Reassembles releases/windows/cttc-windows-deploy.zip.partNNN chunks (split
 so no single file exceeds GitHub's 100MB blob limit) back into the real
-cttc-windows-deploy.zip, then extracts it next to this script.
+cttc-windows-deploy.zip, extracts it next to this script, then cleans up
+everything that was only needed to get there -- the chunks, the
+reassembled zip, the src/ build scripts, and (if the OS allows deleting a
+running script) this file itself -- leaving just the extracted deployment
+bundle behind.
 
 Usage: from a PowerShell prompt, in the same directory as the chunks:
-  powershell -ExecutionPolicy Bypass -File .\prepare-zip.ps1
+  powershell -ExecutionPolicy Bypass -File .\prepare-image.ps1
 
 Run this once after cloning/pulling; it produces the actual deployment
 bundle (CTTC Setup.exe, image/, keys/, deploy.ps1, README-WINDOWS.md) in a
-sibling "cttc-windows-deploy" folder. Re-run it any time the chunks change
-(e.g. after a `git pull`) -- it always rebuilds the zip and extraction
-folder from scratch.
+sibling "cttc-windows-deploy" folder.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -43,6 +45,17 @@ Write-Host "Extracting to $extractDir ..." -ForegroundColor Cyan
 if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force }
 Expand-Archive -Path $zipPath -DestinationPath $extractDir
 
+Write-Host "Cleaning up build artifacts..." -ForegroundColor Cyan
+Remove-Item $zipPath -Force
+Remove-Item $parts.FullName -Force
+$srcDir = Join-Path $root "src"
+if (Test-Path $srcDir) { Remove-Item $srcDir -Recurse -Force }
+
 Write-Host ""
 Write-Host "Done. Deployment bundle ready at: $extractDir" -ForegroundColor Green
 Write-Host "Next: cd there and run deploy.ps1 (see README-WINDOWS.md)."
+
+# Best-effort self-delete -- PowerShell doesn't hold an exclusive lock on a
+# running .ps1, so this succeeds on Windows/PowerShell 7+ in practice, but
+# isn't guaranteed on every OS/filesystem, hence -ErrorAction SilentlyContinue.
+Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
