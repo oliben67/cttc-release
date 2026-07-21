@@ -69,7 +69,7 @@ container's image:
    electron-builder resource (Windows "bundled" builds only -- see "Slim
    vs bundled" above).
 2. **Registry pull** (`../repo/`) -- `image.json` names an image + tag on a
-   container registry (e.g. `ghcr.io/oliben67/cttc-server:0.0.1`) for
+   container registry (e.g. `osteck/cttc-server:0.0.1` on Docker Hub) for
    `docker pull` instead. Every release build now also tags + pushes to
    this ref (see `../shared/build-image.sh`), best-effort -- it requires
    being logged in to the registry, and isn't allowed to fail the release

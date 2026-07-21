@@ -1,4 +1,4 @@
 {
-  "image": "ghcr.io/oliben67/cttc-server",
+  "image": "osteck/cttc-server",
   "tag": "0.0.1"
 }

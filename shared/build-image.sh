@@ -43,9 +43,10 @@ fi
 # -- Registry push (best-effort) --------------------------------------------
 # Requires the image built above still tagged locally as cttc-server:latest
 # (skipped if this run reused a cached tarball and no local image exists),
-# and requires being logged in to the registry already (`docker login
-# ghcr.io`, or whatever registry releases/repo/image.json points at) --
-# neither is assumed, so a failure here is a warning, not a build failure.
+# and requires being logged in to the registry already (Docker Hub by
+# default -- `docker login` -- or whatever registry releases/repo/image.json
+# points at) -- neither is assumed, so a failure here is a warning, not a
+# build failure. CI (see .github/workflows/push-image.yml) logs in first.
 if docker image inspect cttc-server:latest > /dev/null 2>&1; then
   full_ref="$(node -e "const i = require('$image_json'); console.log(\`\${i.image}:\${i.tag}\`)")"
   echo "Tagging + pushing to $full_ref ..."
