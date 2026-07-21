@@ -14,6 +14,10 @@
 # Usage:
 #   releases/windows/src/build-bundle.sh --keys-dir /path/to/keys
 #
+# Or, to also rebuild the installer first (whenever the client itself
+# changed, not just the server image), from app/:
+#   npm run release:win -- --keys-dir /path/to/keys
+#
 # That directory must contain cttc_deploy (private) and cttc_deploy.pub,
 # matching what's already authorized on the deploy target's
 # ~/.ssh/authorized_keys (see README-WINDOWS.md's "Cleanup" section).
