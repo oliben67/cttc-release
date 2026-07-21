@@ -16,7 +16,7 @@ image tarballs).
 
 ## For end users
 
-Download `prepare-image.ps1` and the `cttc-windows-deploy.zip.partNNN`
-files from `windows/`, run `prepare-image.ps1`, done -- see
-[`windows/README.md`](windows/README.md) for what that actually does.
-Nothing else in this repo needs to be downloaded.
+Download `prepare-setup.ps1` and the `cttc-windows-deploy.zip.partNNN`
+files from `windows/`, run `prepare-setup.ps1`, then run the `CTTC
+Setup.exe` it extracts -- see [`windows/README.md`](windows/README.md) for
+what that actually does. Nothing else in this repo needs to be downloaded.

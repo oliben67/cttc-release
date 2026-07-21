@@ -1,3 +1,4 @@
 .DS_Store
 windows/cttc-windows-deploy.zip
 windows/cttc-windows-deploy/
+windows/build-image/cttc-server.tar.gz
