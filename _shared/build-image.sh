@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the CTTC server image and saves it to releases/shared/cttc-server.tar.gz.
+# Builds the CTTC server image and saves it to releases/_shared/cttc-server.tar.gz.
 # Shared across all platforms' build-bundle.sh (windows/, macos/, linux/):
 # the image itself is identical regardless of the client's host OS -- it's
 # always a linux/amd64 container image, run via whatever Docker the host
@@ -9,7 +9,7 @@
 # Skips the rebuild if cttc-server.tar.gz already exists; pass -f/--force
 # to rebuild anyway (e.g. after a server.py change).
 #
-# Also tags + pushes the image to the registry ref in releases/repo/image.json
+# Also tags + pushes the image to the registry ref in releases/_repo/image.json
 # (best-effort -- see "Registry push" below). The app's default is still the
 # offline tarball baked into each installer (not this registry), for two
 # reasons that aren't going away: (1) the tarball avoids GitHub's blob-size
@@ -23,7 +23,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 server_dir="$repo_root/app/server"
-image_json="$repo_root/releases/repo/image.json"
+image_json="$repo_root/releases/_repo/image.json"
 out="$script_dir/cttc-server.tar.gz"
 
 force=0
@@ -51,7 +51,7 @@ fi
 
 # -- Registry push (best-effort, but always attempted) -----------------------
 # Requires being logged in to the registry already (Docker Hub by default --
-# `docker login` -- or whatever registry releases/repo/image.json points
+# `docker login` -- or whatever registry releases/_repo/image.json points
 # at), which isn't assumed here, so a failure is a warning, not a build
 # failure. CI (see .github/workflows/push-image.yml) logs in first.
 full_ref="$(node -e "const i = require('$image_json'); console.log(\`\${i.image}:\${i.tag}\`)")"

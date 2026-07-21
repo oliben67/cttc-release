@@ -9,7 +9,7 @@ writeup, cross-linked from `../README.md`.
 ## Layout
 
 ```
-build-bundle.sh    builds (via ../shared/build-image.sh) the server image
+build-bundle.sh    builds (via ../_shared/build-image.sh) the server image
                  and packages it into this platform's installer (see "How
                  a release is cut" below)
 CTTC Setup.ps1  the one (and only) PowerShell an end user ever runs
@@ -25,9 +25,9 @@ cttc-windows-deploy.zip.partNNN   the built release, chunked for git --
 Shared across all platforms, one level up:
 
 ```
-../shared/       builds + saves the server image once (identical across
-                 Windows/macOS/Linux -- see ../shared/build-image.sh)
-../repo/         image.json + docker-compose.yml for the "docker pull from
+../_shared/       builds + saves the server image once (identical across
+                 Windows/macOS/Linux -- see ../_shared/build-image.sh)
+../_repo/         image.json + docker-compose.yml for the "docker pull from
                  a registry" path (see "Two ways to get the image" below)
 ```
 
@@ -35,7 +35,7 @@ Shared across all platforms, one level up:
 step, never committed); `CTTC Setup.exe` is gitignored only implicitly --
 whether it ends up committed as a plain file or replaced by `.partNNN`
 chunks depends on its size at build time (see "Slim vs bundled"). Same
-transient treatment for `../shared/cttc-server.tar.gz` -- see "How a
+transient treatment for `../_shared/cttc-server.tar.gz` -- see "How a
 release is cut".
 
 ## Slim vs bundled
@@ -46,12 +46,12 @@ build:
 - **Bundled** -- the server image tarball is baked into `CTTC Setup.exe`
   (~145MB total). Works fully offline, no registry needed, but is over
   GitHub's 100MB blob limit -- always shipped as `.partNNN` chunks.
-- **Slim** -- just the registry reference (`../repo/image.json`) is baked
+- **Slim** -- just the registry reference (`../_repo/image.json`) is baked
   in (~95MB). Depends on that registry actually being reachable/published
   (see "Two ways to get the image"), but usually fits under the 100MB
   limit -- committed as `CTTC Setup.exe` directly, no chunking needed.
 
-Either way, `../shared/finalize-artifact.sh` decides for itself based on
+Either way, `../_shared/finalize-artifact.sh` decides for itself based on
 the *actual* built size, not just which mode was picked -- if a slim build
 somehow ends up over 100MB (or a bundled one somehow under), it still
 does the right thing. `../macos/` and `../linux/` are slim-only for now
@@ -64,14 +64,14 @@ CTTC's server always runs as a Docker container. There are two ways the
 running app (see `app/lib/server-provision.js`) can get hold of that
 container's image:
 
-1. **Offline / docker-load** (`../shared/`) -- the actual image, built and
+1. **Offline / docker-load** (`../_shared/`) -- the actual image, built and
    `docker save`d ahead of time, baked directly into the installer as an
    electron-builder resource (Windows "bundled" builds only -- see "Slim
    vs bundled" above).
-2. **Registry pull** (`../repo/`) -- `image.json` names an image + tag on a
+2. **Registry pull** (`../_repo/`) -- `image.json` names an image + tag on a
    container registry (e.g. `osteck/cttc-server:0.0.1` on Docker Hub) for
    `docker pull` instead. Every release build now also tags + pushes to
-   this ref (see `../shared/build-image.sh`), best-effort -- it requires
+   this ref (see `../_shared/build-image.sh`), best-effort -- it requires
    being logged in to the registry, and isn't allowed to fail the release
    if that's not set up. `server-provision.js` prefers a bundled offline
    tarball when the installer has one, falling back to the registry
@@ -126,17 +126,17 @@ share the same image build step.) This runs `windows/build-bundle.sh`,
 which:
 - asks (or takes `--bundle`/`--slim`) whether to bundle the image or just
   reference the registry (see "Slim vs bundled" above),
-- builds the server image once via `../shared/build-image.sh`
+- builds the server image once via `../_shared/build-image.sh`
   (`docker build --platform linux/amd64` against `app/server/`, matching
   the deploy target's usual architecture; skipped if already built --
   pass `--force` to rebuild), `docker save`s + gzips it to
-  `../shared/cttc-server.tar.gz` (gitignored -- a build artifact, not
+  `../_shared/cttc-server.tar.gz` (gitignored -- a build artifact, not
   something to commit), and best-effort tags + pushes it to
-  `../repo/image.json`'s registry ref,
+  `../_repo/image.json`'s registry ref,
 - runs `npm run dist:win` (bundled) or `dist:win:slim` (slim) --
   the latter uses `app/electron-builder.win-slim.json` to build without
   the tarball extraResource,
-- hands the resulting `CTTC Setup.exe` to `../shared/finalize-artifact.sh`,
+- hands the resulting `CTTC Setup.exe` to `../_shared/finalize-artifact.sh`,
   which commits it directly if it's under GitHub's 100MB limit, or zips +
   splits it into `cttc-windows-deploy.zip.partNNN` chunks if not.
 

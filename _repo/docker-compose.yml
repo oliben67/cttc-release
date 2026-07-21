@@ -1,4 +1,4 @@
-# Registry-pull variant of docker-compose.yml (see ../shared/docker-compose.yml
+# Registry-pull variant of docker-compose.yml (see ../_shared/docker-compose.yml
 # for the offline/docker-load variant). image is parameterized because a
 # pulled image is named/tagged from image.json (e.g.
 # osteck/cttc-server:0.0.1, on Docker Hub), not the fixed "cttc-server:latest" a

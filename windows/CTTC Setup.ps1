@@ -1,6 +1,6 @@
 <#
 If "CTTC Setup.exe" is already sitting next to this script (small enough to
-commit directly -- see releases/shared/finalize-artifact.sh), skips
+commit directly -- see releases/_shared/finalize-artifact.sh), skips
 straight to launching it. Otherwise reassembles
 releases/windows/cttc-windows-deploy.zip.partNNN chunks (split so no
 single file exceeds GitHub's 100MB blob limit) back into the real

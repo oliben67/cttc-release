@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Builds the macOS installer with just a reference to the registry image
-# (releases/repo/image.json) -- no tarball baked in, unlike Windows: the
+# (releases/_repo/image.json) -- no tarball baked in, unlike Windows: the
 # base Electron .dmg is small enough on its own to usually land under
 # GitHub's 100MB blob limit without needing the offline path at all (the
 # shared server image is still built here so the registry ref stays
-# current -- see releases/shared/build-image.sh -- just not embedded).
-# releases/shared/finalize-artifact.sh commits the .dmg directly if it's
+# current -- see releases/_shared/build-image.sh -- just not embedded).
+# releases/_shared/finalize-artifact.sh commits the .dmg directly if it's
 # under the limit, or zips + chunks it if not.
 #
 # Usage (from anywhere):
@@ -19,7 +19,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 app_dir="$repo_root/app"
 
-"$repo_root/releases/shared/build-image.sh" "$@"
+"$repo_root/releases/_shared/build-image.sh" "$@"
 
 echo "Building the macOS installer (registry image reference only, no bundled tarball)..."
 ( cd "$app_dir" && npm run dist:mac )
@@ -31,9 +31,9 @@ if [[ -z "$installer" ]]; then
 fi
 echo "Using installer: $installer"
 
-"$repo_root/releases/shared/finalize-artifact.sh" "$installer" "$script_dir" "CTTC.dmg" "cttc-macos-deploy"
+"$repo_root/releases/_shared/finalize-artifact.sh" "$installer" "$script_dir" "CTTC.dmg" "cttc-macos-deploy"
 
 echo ""
 echo "If chunked: commit cttc-macos-deploy.zip.part* (not the zip itself, which is"
-echo "gitignored) and reassemble with prepare-setup.sh. If committed directly:"
+echo "gitignored) and reassemble with cttc-setup.sh. If committed directly:"
 echo "commit 'CTTC.dmg' as-is -- nothing to reassemble."

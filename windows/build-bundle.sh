@@ -2,9 +2,9 @@
 # Builds the Windows installer, either "bundled" (the server image tarball
 # baked in via electron-builder's extraResources -- works offline, no
 # registry needed, but a bigger installer) or "slim" (just a reference to
-# the registry image in releases/repo/image.json -- smaller installer, but
+# the registry image in releases/_repo/image.json -- smaller installer, but
 # depends on that registry actually being reachable/published). Then hands
-# off to releases/shared/finalize-artifact.sh, which commits the installer
+# off to releases/_shared/finalize-artifact.sh, which commits the installer
 # directly if it's under GitHub's 100MB blob limit, or zips + chunks it if
 # not -- either way CTTC needs no install-time staging step to find the
 # image: it reads its own bundled resources directly (see
@@ -42,7 +42,7 @@ if [[ -z "$mode" ]]; then
   esac
 fi
 
-"$repo_root/releases/shared/build-image.sh" $force
+"$repo_root/releases/_shared/build-image.sh" $force
 
 if [[ "$mode" == "bundle" ]]; then
   echo "Building the Windows installer (embeds the shared image as a resource)..."
@@ -59,7 +59,7 @@ if [[ -z "$installer" ]]; then
 fi
 echo "Using installer: $installer"
 
-"$repo_root/releases/shared/finalize-artifact.sh" "$installer" "$script_dir" "CTTC Setup.exe" "cttc-windows-deploy"
+"$repo_root/releases/_shared/finalize-artifact.sh" "$installer" "$script_dir" "CTTC Setup.exe" "cttc-windows-deploy"
 
 echo ""
 echo "If chunked: commit cttc-windows-deploy.zip.part* (not the zip itself, which is"
