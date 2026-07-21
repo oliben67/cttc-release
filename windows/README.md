@@ -19,8 +19,9 @@ cttc-windows-deploy.zip.partNNN   the built release (just the installer,
                  single-blob limit)
 ```
 
-`cttc-windows-deploy.zip` itself, and the folder it extracts to, are
-gitignored -- `prepare-setup.ps1` reconstitutes and cleans them up, so
+`cttc-windows-deploy.zip` itself, and the `CTTC Setup.exe` it extracts
+(directly into this directory, not a nested folder), are gitignored --
+`prepare-setup.ps1` reconstitutes the zip and cleans it back up, so
 they're never meant to be committed. Same for `build-image/cttc-server.tar.gz`
 -- see "How a release is cut".
 

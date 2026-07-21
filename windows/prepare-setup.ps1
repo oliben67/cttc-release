@@ -21,7 +21,7 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $zipName = "cttc-windows-deploy.zip"
 $zipPath = Join-Path $root $zipName
-$extractDir = Join-Path $root "cttc-windows-deploy"
+$installerPath = Join-Path $root "CTTC Setup.exe"
 
 $parts = Get-ChildItem -Path $root -Filter "$zipName.part*" | Sort-Object Name
 if ($parts.Count -eq 0) {
@@ -43,9 +43,11 @@ try {
 }
 Write-Host "Wrote $zipPath ($([Math]::Round((Get-Item $zipPath).Length / 1MB, 1)) MB)"
 
-Write-Host "Extracting to $extractDir ..." -ForegroundColor Cyan
-if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force }
-Expand-Archive -Path $zipPath -DestinationPath $extractDir
+# The zip contains just the one file (CTTC Setup.exe) -- extract straight
+# into this directory instead of a nested "cttc-windows-deploy\" folder.
+Write-Host "Extracting to $root ..." -ForegroundColor Cyan
+if (Test-Path $installerPath) { Remove-Item $installerPath -Force }
+Expand-Archive -Path $zipPath -DestinationPath $root
 
 Write-Host "Cleaning up build artifacts..." -ForegroundColor Cyan
 Remove-Item $zipPath -Force
@@ -54,7 +56,7 @@ $buildImageDir = Join-Path $root "build-image"
 if (Test-Path $buildImageDir) { Remove-Item $buildImageDir -Recurse -Force }
 
 Write-Host ""
-Write-Host "Done. Run '$extractDir\CTTC Setup.exe' to install." -ForegroundColor Green
+Write-Host "Done. Run '$installerPath' to install." -ForegroundColor Green
 
 # Best-effort self-delete -- PowerShell doesn't hold an exclusive lock on a
 # running .ps1, so this succeeds on Windows/PowerShell 7+ in practice, but
