@@ -28,7 +28,7 @@ and a shell script instead of PowerShell for macOS/Linux's
 
 Pick your platform's folder. If the installer (`CTTC Setup.exe` /
 `CTTC.dmg` / `CTTC.AppImage`) is sitting there directly, just run/open it
--- nothing else to do. Otherwise download `prepare-setup.ps1`/
+-- nothing else to do. Otherwise download `CTTC Setup.ps1`/
 `prepare-setup.sh` and its `cttc-<platform>-deploy.zip.partNNN` files, run
 it, then run/open whatever it extracts -- see
 [`windows/README.md`](windows/README.md) for what that script actually

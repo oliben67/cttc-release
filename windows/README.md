@@ -12,7 +12,7 @@ writeup, cross-linked from `../README.md`.
 build-bundle.sh    builds (via ../shared/build-image.sh) the server image
                  and packages it into this platform's installer (see "How
                  a release is cut" below)
-prepare-setup.ps1  the one (and only) PowerShell an end user ever runs
+CTTC Setup.ps1  the one (and only) PowerShell an end user ever runs
                  (see below) -- it does NOT install anything itself, and
                  is a no-op if there's nothing to reassemble (see "Slim vs
                  bundled" below)
@@ -84,12 +84,12 @@ container's image:
 ## How this all fits together
 
 There's no separate "deploy" step, staging step, or script beyond
-`prepare-setup.ps1` (there used to be a `deploy.ps1`, and later a
+`CTTC Setup.ps1` (there used to be a `deploy.ps1`, and later a
 `prepare-image.ps1` that staged the tarball into `%USERPROFILE%\.cttc\` --
 CTTC's own first-run logic replaced both):
 
 1. If `CTTC Setup.exe` isn't already sitting there directly, run
-   `prepare-setup.ps1` to reassemble and extract it from the `.partNNN`
+   `CTTC Setup.ps1` to reassemble and extract it from the `.partNNN`
    chunks, then delete every build artifact (chunks, the reassembled zip,
    and itself) -- it never runs `CTTC Setup.exe` for you either way.
 2. Run `CTTC Setup.exe` yourself, like any normal Windows installer. The

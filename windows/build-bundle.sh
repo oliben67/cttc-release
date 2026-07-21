@@ -63,5 +63,5 @@ echo "Using installer: $installer"
 
 echo ""
 echo "If chunked: commit cttc-windows-deploy.zip.part* (not the zip itself, which is"
-echo "gitignored) and reassemble with prepare-setup.ps1. If committed directly:"
+echo "gitignored) and reassemble with CTTC Setup.ps1. If committed directly:"
 echo "commit 'CTTC Setup.exe' as-is -- nothing to reassemble."

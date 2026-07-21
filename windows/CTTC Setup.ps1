@@ -1,23 +1,22 @@
 <#
 If "CTTC Setup.exe" is already sitting next to this script (small enough to
-commit directly -- see releases/shared/finalize-artifact.sh), there's
-nothing to do. Otherwise reassembles releases/windows/cttc-windows-deploy.zip.partNNN
-chunks (split so no single file exceeds GitHub's 100MB blob limit) back
-into the real cttc-windows-deploy.zip, extracts it, then cleans up
-everything only needed to get there -- the chunks, the reassembled zip,
-and (if the OS allows deleting a running script) this file itself --
-leaving just "CTTC Setup.exe" behind.
+commit directly -- see releases/shared/finalize-artifact.sh), skips
+straight to launching it. Otherwise reassembles
+releases/windows/cttc-windows-deploy.zip.partNNN chunks (split so no
+single file exceeds GitHub's 100MB blob limit) back into the real
+cttc-windows-deploy.zip, extracts it, cleans up everything only needed to
+get there -- the chunks and the reassembled zip -- then launches
+"CTTC Setup.exe", and (if the OS allows deleting a running script) deletes
+itself.
 
-This script does NOT install or run anything. That's deliberate: no
-PowerShell beyond this one script is ever used -- run "CTTC Setup.exe"
-yourself, the same as any other Windows installer. From there CTTC handles
-everything itself: the server image is already baked into the installer
-(or, for a "slim" build, just a registry reference -- see
-app/lib/server-provision.js), so there's no separate staging or deploy
-step left to run.
+No PowerShell beyond this one script is ever used. From "CTTC Setup.exe"
+onward, CTTC handles everything itself: the server image is already baked
+into the installer (or, for a "slim" build, just a registry reference --
+see app/lib/server-provision.js), so there's no separate staging or
+deploy step left to run.
 
 Usage: from a PowerShell prompt, in the same directory as this script:
-  powershell -ExecutionPolicy Bypass -File .\prepare-setup.ps1
+  powershell -ExecutionPolicy Bypass -File ".\CTTC Setup.ps1"
 #>
 
 $ErrorActionPreference = "Stop"
@@ -26,8 +25,21 @@ $zipName = "cttc-windows-deploy.zip"
 $zipPath = Join-Path $root $zipName
 $installerPath = Join-Path $root "CTTC Setup.exe"
 
+function Launch-Installer {
+  Write-Host "Starting '$installerPath' ..." -ForegroundColor Cyan
+  try {
+    Start-Process -FilePath $installerPath -ErrorAction Stop
+  } catch {
+    # Don't let a launch failure (e.g. blocked by AV, already running) abort
+    # cleanup/self-delete below -- the installer is still sitting right
+    # there either way, just tell the user to double-click it themselves.
+    Write-Host "Could not start it automatically ($($_.Exception.Message)) -- double-click '$installerPath' to install." -ForegroundColor Yellow
+  }
+}
+
 if (Test-Path $installerPath) {
-  Write-Host "'$installerPath' is already here -- nothing to reassemble. Run it to install." -ForegroundColor Green
+  Write-Host "'$installerPath' is already here -- nothing to reassemble." -ForegroundColor Green
+  Launch-Installer
   Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
   exit 0
 }
@@ -62,7 +74,7 @@ Remove-Item $zipPath -Force
 Remove-Item $parts.FullName -Force
 
 Write-Host ""
-Write-Host "Done. Run '$installerPath' to install." -ForegroundColor Green
+Launch-Installer
 
 # Best-effort self-delete -- PowerShell doesn't hold an exclusive lock on a
 # running .ps1, so this succeeds on Windows/PowerShell 7+ in practice, but
