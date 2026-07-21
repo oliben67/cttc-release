@@ -40,24 +40,27 @@ else
   echo "Wrote $out"
 fi
 
-# -- Registry push (best-effort) --------------------------------------------
-# Requires the image built above still tagged locally as cttc-server:latest
-# (skipped if this run reused a cached tarball and no local image exists),
-# and requires being logged in to the registry already (Docker Hub by
-# default -- `docker login` -- or whatever registry releases/repo/image.json
-# points at) -- neither is assumed, so a failure here is a warning, not a
-# build failure. CI (see .github/workflows/push-image.yml) logs in first.
-if docker image inspect cttc-server:latest > /dev/null 2>&1; then
-  full_ref="$(node -e "const i = require('$image_json'); console.log(\`\${i.image}:\${i.tag}\`)")"
-  echo "Tagging + pushing to $full_ref ..."
-  docker tag cttc-server:latest "$full_ref"
-  if docker push "$full_ref"; then
-    echo "Pushed $full_ref"
-  else
-    echo "WARNING: could not push $full_ref -- log in first (docker login <registry>) if you want the registry path kept up to date. Continuing with the offline tarball only." >&2
-  fi
+# A cached-tarball run skips the build above, so cttc-server:latest may not
+# be tagged locally even though $out exists -- load it back from the
+# tarball so the push below always has something to push, every run,
+# regardless of cache state.
+if ! docker image inspect cttc-server:latest > /dev/null 2>&1; then
+  echo "Loading cached image from $out for the registry push..."
+  docker load -i "$out"
+fi
+
+# -- Registry push (best-effort, but always attempted) -----------------------
+# Requires being logged in to the registry already (Docker Hub by default --
+# `docker login` -- or whatever registry releases/repo/image.json points
+# at), which isn't assumed here, so a failure is a warning, not a build
+# failure. CI (see .github/workflows/push-image.yml) logs in first.
+full_ref="$(node -e "const i = require('$image_json'); console.log(\`\${i.image}:\${i.tag}\`)")"
+echo "Tagging + pushing to $full_ref ..."
+docker tag cttc-server:latest "$full_ref"
+if docker push "$full_ref"; then
+  echo "Pushed $full_ref"
 else
-  echo "No local cttc-server:latest image to push (reused a cached tarball) -- pass --force to rebuild + push."
+  echo "WARNING: could not push $full_ref -- log in first (docker login <registry>) if you want the registry path kept up to date. Continuing with the offline tarball only." >&2
 fi
 
 docker rmi cttc-server:latest > /dev/null 2>&1 || true
