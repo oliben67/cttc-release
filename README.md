@@ -7,16 +7,29 @@ image tarballs).
 
 ## Contents
 
-- **`windows/`** -- the Windows deployment bundle: a packaged client
-  installer plus the server container image, either built ahead of time
-  (`windows/build-image/`) or pulled from a registry (`windows/repo/`). See
-  [`windows/README.md`](windows/README.md) for the full breakdown of the
-  directory layout, how the two image-sourcing paths work, and how a
-  release is cut.
+- **`shared/`** -- the server container image, built once and reused across
+  every platform below (it's always the same linux/amd64 image regardless
+  of the client's host OS). See `shared/build-image.sh`.
+- **`repo/`** -- `image.json` + a docker-compose variant for the
+  registry-pull path (an alternative to the baked-in tarball -- see
+  `windows/README.md`'s "Two ways to get the image").
+- **`windows/`** -- packaged as "bundled" (image tarball baked in, always
+  chunked) or "slim" (registry reference only, usually fits under GitHub's
+  100MB limit directly) -- see `windows/README.md`'s "Slim vs bundled".
+- **`macos/`**, **`linux/`** -- slim-only for now (their base Electron
+  package alone is already close to/over the 100MB limit).
+
+See [`windows/README.md`](windows/README.md) for the full breakdown -- the
+same design applies to all three, just with a different installer format
+and a shell script instead of PowerShell for macOS/Linux's
+`prepare-setup.sh`.
 
 ## For end users
 
-Download `prepare-setup.ps1` and the `cttc-windows-deploy.zip.partNNN`
-files from `windows/`, run `prepare-setup.ps1`, then run the `CTTC
-Setup.exe` it extracts -- see [`windows/README.md`](windows/README.md) for
-what that actually does. Nothing else in this repo needs to be downloaded.
+Pick your platform's folder. If the installer (`CTTC Setup.exe` /
+`CTTC.dmg` / `CTTC.AppImage`) is sitting there directly, just run/open it
+-- nothing else to do. Otherwise download `prepare-setup.ps1`/
+`prepare-setup.sh` and its `cttc-<platform>-deploy.zip.partNNN` files, run
+it, then run/open whatever it extracts -- see
+[`windows/README.md`](windows/README.md) for what that script actually
+does. Nothing else in this repo needs to be downloaded.

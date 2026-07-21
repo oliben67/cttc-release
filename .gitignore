@@ -1,4 +1,5 @@
 .DS_Store
+shared/cttc-server.tar.gz
 windows/cttc-windows-deploy.zip
-windows/CTTC Setup.exe
-windows/build-image/cttc-server.tar.gz
+macos/cttc-macos-deploy.zip
+linux/cttc-linux-deploy.zip
