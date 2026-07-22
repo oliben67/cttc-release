@@ -12,9 +12,9 @@
 #
 # Usage (from anywhere):
 #   releases/windows/build-bundle.sh [--bundle|--slim] [-f|--force]
-#   (prompts interactively if --bundle/--slim isn't passed and stdin is a
-#   tty; defaults to --bundle with no prompt otherwise, e.g. under
-#   `task`/`npm run`/CI. --force rebuilds the shared image even if cached)
+#   (Windows always defaults to --bundle, no prompt -- pass --slim
+#   explicitly to override. --force rebuilds the shared image even if
+#   cached)
 #
 # Or via the Task/npm entry point, from app/:
 #   npm run release:win        # or: task build:release:win
@@ -35,19 +35,13 @@ for arg in "$@"; do
   esac
 done
 
+# Windows always ships bundled by default -- no prompt, ever. (Other
+# platforms are always slim; see releases/macos and releases/linux's own
+# build-bundle.sh, which never had a bundle/slim choice to begin with.)
+# Revisit this policy later if per-platform choice is ever wanted again --
+# for now --slim is still available as an explicit override.
 if [[ -z "$mode" ]]; then
-  if [[ -t 0 ]]; then
-    read -r -p "Bundle the server image into CTTC Setup.exe? Bigger installer, but works without registry access. [Y/n] " ans
-    case "$ans" in
-      [nN]*) mode="slim" ;;
-      *) mode="bundle" ;;
-    esac
-  else
-    # no tty to prompt on (CI, `task`/`npm run` with no input piped in, ...)
-    # -- `read` would just fail under `set -e` here. Default to the same
-    # answer as pressing Enter at the prompt: bundled.
-    mode="bundle"
-  fi
+  mode="bundle"
 fi
 
 "$repo_root/releases/_shared/build-image.sh" $force
