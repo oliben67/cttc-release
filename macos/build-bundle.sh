@@ -12,7 +12,7 @@
 #   releases/macos/build-bundle.sh [-f|--force]   # --force rebuilds the shared image even if cached
 #
 # Or via the Task/npm entry point, from app/:
-#   npm run release:mac        # or: task release:mac
+#   npm run release:mac        # or: task build:release:mac
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

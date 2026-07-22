@@ -20,7 +20,7 @@ cttc-macos-deploy.zip.partNNN   chunks, only if the .dmg came out too big
 Cut a release from `app/`:
 
 ```sh
-npm run release:mac          # or: task release:mac
+npm run release:mac          # or: task build:release:mac
 ```
 
 End users: if `CTTC.dmg` is there directly, just open it. Otherwise

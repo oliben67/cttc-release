@@ -118,7 +118,7 @@ From `app/` in the main repo (needs Docker and the usual electron-builder
 toolchain):
 
 ```sh
-npm run release:win          # or: task release:win
+npm run release:win          # or: task build:release:win
 ```
 
 (`release:mac` / `release:linux` for the other two platforms -- all three

@@ -10,7 +10,7 @@
 #   releases/linux/build-bundle.sh [-f|--force]   # --force rebuilds the shared image even if cached
 #
 # Or via the Task/npm entry point, from app/:
-#   npm run release:linux        # or: task release:linux
+#   npm run release:linux        # or: task build:release:linux
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

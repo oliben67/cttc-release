@@ -12,11 +12,12 @@
 #
 # Usage (from anywhere):
 #   releases/windows/build-bundle.sh [--bundle|--slim] [-f|--force]
-#   (prompts interactively if --bundle/--slim isn't passed; --force rebuilds
-#   the shared image even if cached)
+#   (prompts interactively if --bundle/--slim isn't passed and stdin is a
+#   tty; defaults to --bundle with no prompt otherwise, e.g. under
+#   `task`/`npm run`/CI. --force rebuilds the shared image even if cached)
 #
 # Or via the Task/npm entry point, from app/:
-#   npm run release:win        # or: task release:win
+#   npm run release:win        # or: task build:release:win
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,11 +36,18 @@ for arg in "$@"; do
 done
 
 if [[ -z "$mode" ]]; then
-  read -r -p "Bundle the server image into CTTC Setup.exe? Bigger installer, but works without registry access. [Y/n] " ans
-  case "$ans" in
-    [nN]*) mode="slim" ;;
-    *) mode="bundle" ;;
-  esac
+  if [[ -t 0 ]]; then
+    read -r -p "Bundle the server image into CTTC Setup.exe? Bigger installer, but works without registry access. [Y/n] " ans
+    case "$ans" in
+      [nN]*) mode="slim" ;;
+      *) mode="bundle" ;;
+    esac
+  else
+    # no tty to prompt on (CI, `task`/`npm run` with no input piped in, ...)
+    # -- `read` would just fail under `set -e` here. Default to the same
+    # answer as pressing Enter at the prompt: bundled.
+    mode="bundle"
+  fi
 fi
 
 "$repo_root/releases/_shared/build-image.sh" $force

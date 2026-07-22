@@ -22,7 +22,7 @@ cttc-linux-deploy.zip.partNNN   chunks, only if the AppImage came out too
 Cut a release from `app/`:
 
 ```sh
-npm run release:linux          # or: task release:linux
+npm run release:linux          # or: task build:release:linux
 ```
 
 End users: if `CTTC.AppImage` is there directly, just run it (`chmod +x`
