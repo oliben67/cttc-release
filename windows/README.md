@@ -35,7 +35,7 @@ Shared across all platforms, one level up:
 step, never committed); `CTTC Setup.exe` is gitignored only implicitly --
 whether it ends up committed as a plain file or replaced by `.partNNN`
 chunks depends on its size at build time (see "Slim vs bundled"). Same
-transient treatment for `../_shared/cttc-server.tar.gz` -- see "How a
+transient treatment for `../_shared/cttc-scout.tar.gz` -- see "How a
 release is cut".
 
 ## Slim vs bundled
@@ -69,7 +69,7 @@ container's image:
    electron-builder resource (Windows "bundled" builds only -- see "Slim
    vs bundled" above).
 2. **Registry pull** (`../_repo/`) -- `image.json` names an image + tag on a
-   container registry (e.g. `osteck/cttc-server:0.0.1` on Docker Hub) for
+   container registry (e.g. `osteck/cttc-scout:0.0.1` on Docker Hub) for
    `docker pull` instead. Every release build now also tags + pushes to
    this ref (see `../_shared/build-image.sh`), best-effort -- it requires
    being logged in to the registry, and isn't allowed to fail the release
@@ -130,7 +130,7 @@ which:
   (`docker build --platform linux/amd64` against `app/server/`, matching
   the deploy target's usual architecture; skipped if already built --
   pass `--force` to rebuild), `docker save`s + gzips it to
-  `../_shared/cttc-server.tar.gz` (gitignored -- a build artifact, not
+  `../_shared/cttc-scout.tar.gz` (gitignored -- a build artifact, not
   something to commit), and best-effort tags + pushes it to
   `../_repo/image.json`'s registry ref,
 - runs `npm run dist:win` (bundled) or `dist:win:slim` (slim) --
