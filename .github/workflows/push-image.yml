@@ -1,7 +1,7 @@
 name: Push server image to Docker Hub
 
 # Builds the CTTC server image and pushes it to the registry ref in
-# _repo/image.json (currently osteck/cttc-server). Lives here (not in the
+# _repo/image.json (currently osteck/cttc-scout). Lives here (not in the
 # main cut-to-the-chase repo) since this repo is what actually publishes
 # releases -- but the Docker build context (app/server/) is source code
 # that only exists in cut-to-the-chase, so that repo is checked out
@@ -34,6 +34,6 @@ jobs:
       - name: Build + push the server image
         run: |
           ref="$(node -e "const i = require('./_repo/image.json'); console.log(\`\${i.image}:\${i.tag}\`)")"
-          docker build --platform linux/amd64 -t cttc-server:latest cut-to-the-chase/app/server
-          docker tag cttc-server:latest "$ref"
+          docker build --platform linux/amd64 -t cttc-scout:latest cut-to-the-chase/app/server
+          docker tag cttc-scout:latest "$ref"
           docker push "$ref"
