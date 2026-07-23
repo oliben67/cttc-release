@@ -1,4 +1,4 @@
 {
-  "image": "osteck/cttc-server",
+  "image": "osteck/cttc-scout",
   "tag": "0.0.1"
 }
