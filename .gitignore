@@ -1,5 +1,5 @@
 .DS_Store
-_shared/cttc-scout.tar.gz
+_shared/cttc-gateway.tar.gz
 windows/cttc-windows-deploy.zip
 macos/cttc-macos-deploy.zip
 linux/cttc-linux-deploy.zip
