@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # Sets up a persistent ssh-agent on this host, at a fixed socket path, so the
-# cttc-scout container's SSH_AUTH_SOCK mount (see docker-compose.yml) keeps
+# cttc-gateway container's SSH_AUTH_SOCK mount (see docker-compose.yml) keeps
 # working across reboots/logouts instead of silently going stale the moment
 # a forwarded-agent ssh session ends.
 #
 # Run this ONCE, directly on the Docker-enabled host that runs the
-# cttc-scout container -- not on your client machine, and not over the
+# cttc-gateway container -- not on your client machine, and not over the
 # tunnel CTTC itself opens (ssh in with your own account first).
 #
 # What it does:
 #   - installs a systemd --user service that runs `ssh-agent` at a fixed
 #     socket path (survives reboot: `loginctl enable-linger` + WantedBy=
 #     default.target keeps it running without you being logged in)
-#   - writes/updates cttc-scout/.env with SSH_AUTH_SOCK=<that path>, so
+#   - writes/updates cttc-gateway/.env with SSH_AUTH_SOCK=<that path>, so
 #     `docker compose up` picks it up on every future run regardless of
 #     which shell/session invokes it (interactive, or the ssh exec CTTC's
 #     "Update server image" / "Run Setup" use) -- this is what actually
@@ -32,7 +32,7 @@ fi
 SOCK="$HOME/.ssh/agent.sock"
 UNIT_DIR="$HOME/.config/systemd/user"
 UNIT="$UNIT_DIR/cttc-ssh-agent.service"
-COMPOSE_DIR="$HOME/cttc-scout"   # matches server-provision.js's remoteDir
+COMPOSE_DIR="$HOME/cttc-gateway"   # matches server-provision.js's remoteDir
 
 mkdir -p "$UNIT_DIR" "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
