@@ -1,13 +1,13 @@
 # Registry-pull variant of docker-compose.yml (see ../_shared/docker-compose.yml
 # for the offline/docker-load variant). image is parameterized because a
 # pulled image is named/tagged from image.json (e.g.
-# osteck/cttc-scout:0.0.1, on Docker Hub), not the fixed "cttc-scout:latest" a
+# osteck/cttc-gateway:0.0.1, on Docker Hub), not the fixed "cttc-gateway:latest" a
 # local `docker load` restores -- the app sets $CTTC_IMAGE from image.json
 # before invoking `docker compose up` with this file (see
 # app/lib/server-provision.js). Keep pid/network_mode/volumes in sync by
 # hand with the other two compose files.
 services:
-  cttc-scout:
+  cttc-gateway:
     image: ${CTTC_IMAGE}
     restart: unless-stopped
     pid: host
