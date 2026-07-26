@@ -46,7 +46,11 @@ if [[ -z "$mode" ]]; then
   mode="bundle"
 fi
 
-"$repo_root/releases/_shared/build-image.sh" "${image_args[@]}"
+if [[ ${#image_args[@]} -gt 0 ]]; then
+  "$repo_root/releases/_shared/build-image.sh" "${image_args[@]}"
+else
+  "$repo_root/releases/_shared/build-image.sh"
+fi
 
 if [[ "$mode" == "bundle" ]]; then
   echo "Building the Windows installer (embeds the shared image as a resource)..."
