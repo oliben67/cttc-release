@@ -9,7 +9,10 @@
 # under the limit, or zips + chunks it if not.
 #
 # Usage (from anywhere):
-#   releases/macos/build-bundle.sh [-f|--force]   # --force rebuilds the shared image even if cached
+#   releases/macos/build-bundle.sh [-c|--reuse-cache]
+#   (the shared server image is rebuilt from scratch by default -- pass
+#   --reuse-cache to skip that when iterating on packaging only, with no
+#   server/ changes at all)
 #
 # Or via the Task/npm entry point, from app/:
 #   npm run release:mac        # or: task build:release:mac
