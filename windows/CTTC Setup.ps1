@@ -4,11 +4,10 @@ commit directly -- see releases/_shared/finalize-artifact.sh), skips
 straight to launching it. Otherwise reassembles
 releases/windows/cttc-windows-deploy.zip.partNNN chunks (split so no
 single file exceeds GitHub's 100MB blob limit) back into the real
-cttc-windows-deploy.zip, extracts it, launches "CTTC Setup.exe", then
-offers to erase everything this script used (the chunks/zip, if any, and
-the installer .exe itself) once the user confirms the install actually
-finished -- and (if the OS allows deleting a running script) deletes
-itself either way.
+cttc-windows-deploy.zip, extracts it, cleans up everything only needed to
+get there -- the chunks and the reassembled zip -- then launches
+"CTTC Setup.exe", and (if the OS allows deleting a running script) deletes
+itself.
 
 No PowerShell beyond this one script is ever used. From "CTTC Setup.exe"
 onward, CTTC handles everything itself: the server image is already baked
@@ -38,28 +37,9 @@ function Launch-Installer {
   }
 }
 
-# NSIS installers commonly re-launch themselves as an elevated child process
-# and let the original one exit right away, so `Start-Process -Wait` on the
-# launcher here wouldn't actually wait for the real install to finish --
-# asking the user directly, once they've seen it complete, is the only
-# reliable signal. Skipping (typing anything other than Enter) leaves every
-# setup file in place, untouched.
-function Offer-Cleanup {
-  Write-Host ""
-  $answer = Read-Host "Once the CTTC installer above has finished, press Enter to erase these setup files from '$root' (or type 'skip' to leave them)"
-  if ($answer -match '^s') {
-    Write-Host "Leaving setup files in place." -ForegroundColor Yellow
-    return
-  }
-  Write-Host "Removing setup files from '$root' ..." -ForegroundColor Cyan
-  Remove-Item -LiteralPath $installerPath -Force -ErrorAction SilentlyContinue
-  Get-ChildItem -Path $root -Filter "$zipName*" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
-}
-
 if (Test-Path $installerPath) {
   Write-Host "'$installerPath' is already here -- nothing to reassemble." -ForegroundColor Green
   Launch-Installer
-  Offer-Cleanup
   Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
   exit 0
 }
@@ -95,7 +75,6 @@ Remove-Item $parts.FullName -Force
 
 Write-Host ""
 Launch-Installer
-Offer-Cleanup
 
 # Best-effort self-delete -- PowerShell doesn't hold an exclusive lock on a
 # running .ps1, so this succeeds on Windows/PowerShell 7+ in practice, but
