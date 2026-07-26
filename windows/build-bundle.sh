@@ -11,10 +11,11 @@
 # app/lib/server-provision.js).
 #
 # Usage (from anywhere):
-#   releases/windows/build-bundle.sh [--bundle|--slim] [-f|--force]
+#   releases/windows/build-bundle.sh [--bundle|--slim] [-c|--reuse-cache]
 #   (Windows always defaults to --bundle, no prompt -- pass --slim
-#   explicitly to override. --force rebuilds the shared image even if
-#   cached)
+#   explicitly to override. The shared server image is rebuilt from
+#   scratch by default -- pass --reuse-cache to skip that when iterating
+#   on packaging only, with no server/ changes at all.)
 #
 # Or via the Task/npm entry point, from app/:
 #   npm run release:win        # or: task build:release:win
@@ -25,12 +26,13 @@ repo_root="$(cd "$script_dir/../.." && pwd)"
 app_dir="$repo_root/app"
 
 mode=""
-force=""
+image_args=()
 for arg in "$@"; do
   case "$arg" in
     --bundle) mode="bundle" ;;
     --slim) mode="slim" ;;
-    -f|--force) force="--force" ;;
+    -c|--reuse-cache) image_args+=(--reuse-cache) ;;
+    -f|--force) ;; # kept as a no-op -- rebuilding is the default now
     *) echo "unknown argument: $arg" >&2; exit 1 ;;
   esac
 done
@@ -44,7 +46,7 @@ if [[ -z "$mode" ]]; then
   mode="bundle"
 fi
 
-"$repo_root/releases/_shared/build-image.sh" $force
+"$repo_root/releases/_shared/build-image.sh" "${image_args[@]}"
 
 if [[ "$mode" == "bundle" ]]; then
   echo "Building the Windows installer (embeds the shared image as a resource)..."
