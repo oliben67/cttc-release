@@ -6,8 +6,9 @@ releases/windows/cttc-windows-deploy.zip.partNNN chunks (split so no
 single file exceeds GitHub's 100MB blob limit) back into the real
 cttc-windows-deploy.zip, extracts it, cleans up everything only needed to
 get there -- the chunks and the reassembled zip -- then launches
-"CTTC Setup.exe", and (if the OS allows deleting a running script) deletes
-itself.
+"CTTC Setup.exe". It also removes build-bundle.sh if that dev/build-only
+script happens to be sitting alongside it, and (if the OS allows deleting a
+running script) deletes itself.
 
 No PowerShell beyond this one script is ever used. From "CTTC Setup.exe"
 onward, CTTC handles everything itself: the server image is already baked
@@ -24,6 +25,12 @@ $root = $PSScriptRoot
 $zipName = "cttc-windows-deploy.zip"
 $zipPath = Join-Path $root $zipName
 $installerPath = Join-Path $root "CTTC Setup.exe"
+# A dev/build-only script that sometimes ends up sitting next to this one in
+# the same downloaded folder -- not needed by (and not meant for) whoever's
+# just installing CTTC, so it's removed alongside the other build leftovers
+# rather than left behind to confuse an end user. Best-effort: it may
+# legitimately not be there at all.
+$buildBundlePath = Join-Path $root "build-bundle.sh"
 
 function Launch-Installer {
   Write-Host "Starting '$installerPath' ..." -ForegroundColor Cyan
@@ -40,6 +47,7 @@ function Launch-Installer {
 if (Test-Path $installerPath) {
   Write-Host "'$installerPath' is already here -- nothing to reassemble." -ForegroundColor Green
   Launch-Installer
+  Remove-Item -LiteralPath $buildBundlePath -Force -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
   exit 0
 }
@@ -72,6 +80,7 @@ Expand-Archive -Path $zipPath -DestinationPath $root
 Write-Host "Cleaning up build artifacts..." -ForegroundColor Cyan
 Remove-Item $zipPath -Force
 Remove-Item $parts.FullName -Force
+Remove-Item -LiteralPath $buildBundlePath -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Launch-Installer
