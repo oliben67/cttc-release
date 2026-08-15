@@ -1,57 +1,105 @@
 # Deployment variant of docker-compose.yml: no `build:` context, because
 # this ships alongside a pre-built image (docker load'd from
 # cttc-gateway.tar.gz) rather than the server sources -- see
-# releases/windows/deploy.ps1 and docs/architecture/remote-server.md. Keep
-# the two files' `image`/`pid`/`network_mode`/`volumes` in sync by hand;
-# docker-compose.yml stays the source-build version for local dev.
+# docs/architecture/remote-server.md. Keep the two files' `image`/
+# `network_mode`/`volumes` in sync by hand; app/server-logsump/docker-
+# compose.yml stays the source-build version, for log-sump's own local dev.
 services:
   cttc-gateway:
     image: cttc-gateway:latest
     restart: unless-stopped
-    # Redis's own graceful-shutdown RDB save (see redis_log.py's start())
-    # needs real time to complete under real data volumes -- Docker's
-    # default (10s) is tighter than ideal headroom over the ~256MB
-    # maxmemory cap's worst-case save time; see redis_log.py's stop() for
-    # the matching internal 15s backstop this is sized to exceed.
+    # Redis's own graceful-shutdown RDB save needs real time to complete
+    # under real data volumes -- Docker's default (10s) is tighter than
+    # ideal headroom over Redis's own default snapshot policy's worst-case
+    # save time.
     stop_grace_period: 30s
-    # both required for accurate host telemetry (HostStatsSource uses
-    # psutil, which without these only sees this container's own cgroup/
-    # network-namespace view, not the physical host's):
-    pid: host
+    # Deliberately NOT `pid: host` (the old app/server image used it, for
+    # HostStatsSource/psutil): this image's own /init (s6-overlay, spec
+    # §3.2) hard-requires being PID 1 in its own PID namespace to supervise
+    # its four processes -- confirmed by actually booting this compose file
+    # with pid: host during the migration to this image, which fails
+    # immediately with "s6-overlay-suexec: fatal: can only run as pid 1".
+    # network_mode: host is still needed, both so this container is
+    # reachable on the host's real network interfaces (the client talks to
+    # it directly over plain HTTP, see docs/architecture/remote-server.md)
+    # and so log_sump.listener's `/proc/net/dev` read (below) reflects the
+    # host's real network counters, not this container's own namespace's.
     network_mode: host
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       # Shared-secret required (as the X-CTTC-Token header) on every HTTP
       # request once set (br-NET-004) -- this container binds 0.0.0.0 with
       # network_mode: host above, so without it anything that can reach
-      # this host at all has full unauthenticated API access. Passed
-      # through from the invoking shell's env, generated/persisted by
-      # main.js's lib/api-token.js at provision time.
-      - CTTC_API_TOKEN
+      # this host at all has full unauthenticated API access.
+      # CTTC_API_TOKEN is passed through from the invoking shell's env
+      # (generated/persisted by main.js's lib/api-token.js at provision
+      # time); LOG_SUMP_GATEWAY__TOKEN is log-sump's own name for the
+      # identical X-CTTC-Token gate (see
+      # log_sump.common.auth.GatewayTokenAuthBackend) -- translated here
+      # rather than in main.js, which still only knows about
+      # CTTC_API_TOKEN.
+      - LOG_SUMP_GATEWAY__TOKEN=${CTTC_API_TOKEN}
+      # lib/server-provision.js's ensureLocalContainer always calls this
+      # with the same fixed port (8765, matching every cttc-side
+      # assumption -- tests, the renderer) -- overriding log-sump's own
+      # default (8080) here, rather than changing that default or every
+      # cttc-side reference to it, keeps this translation confined to the
+      # one place that actually needs it.
+      - LOG_SUMP_SERVER__BIND_PORT=8765
+      # Auto-registers this host's own Docker daemon as a `transport: local`
+      # daemon right at boot -- log-sump's equivalent of cttc's own
+      # `--auto-collect` flag (the old server.py's ENTRYPOINT): without
+      # this, nothing is watched until a client explicitly adds a daemon
+      # (POST /daemons). `host`/`user` are unused for transport: local (see
+      # log_sump.listener.app.build_transport) -- "local" here is just a
+      # human-readable docker_host id, not resolved anywhere.
+      - LOG_SUMP_DAEMONS=[{"id":"local","host":"local","transport":"local"}]
+      # Since this container can't use pid: host (see above), the
+      # transport: local daemon's host-level telemetry (system_stats.py's
+      # "proc" source: CPU/mem/net/disk for the "This machine" gateway's
+      # own host-wide graph) instead reads from the host's real /proc,
+      # bind-mounted read-only below at a separate path -- same technique
+      # node_exporter/cAdvisor use to avoid needing pid: host or
+      # `--privileged`. Only applies to transport: local (see
+      # ListenerConfig.local_proc_root's own docstring); an SSH-reached
+      # daemon's /proc read runs on that remote machine, unaffected by
+      # anything here.
+      - LOG_SUMP_LISTENER__LOCAL_PROC_ROOT=/host/proc
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # Lets `docker -H ssh://...` (Set Sources with an ssh:// host) reach a
-      # *third* machine, authenticating as whatever key this host's own
-      # ssh-agent already has loaded -- no key ever lives in the container.
-      # Falls back to /dev/null (a harmless no-op mount) when this host has
-      # no SSH_AUTH_SOCK exported, e.g. no agent running: see
-      # docs/architecture/remote-server.md.
+      # Bind mount (not a fresh `mount -t proc`), deliberately: a bind
+      # mount exposes the *same* procfs instance the host already mounted
+      # in its own root PID namespace, so reads through it reflect the
+      # host's true system-wide view regardless of which namespace this
+      # container's own process (log-listener) is reading from -- unlike
+      # `pid: host`, this doesn't require this container to give up its
+      # own PID namespace, so it doesn't conflict with s6-overlay's PID-1
+      # requirement (see the `network_mode` comment above). Read-only:
+      # nothing here ever needs to write to /proc.
+      - /proc:/host/proc:ro
+      # Lets SSHTransport (a plain `ssh <user>@<host> docker ...`, not
+      # `docker -H ssh://`) reach a *third* machine, authenticating as
+      # whatever key this host's own ssh-agent already has loaded -- no key
+      # ever lives in the container. Falls back to /dev/null (a harmless
+      # no-op mount) when this host has no SSH_AUTH_SOCK exported, e.g. no
+      # agent running.
       - ${SSH_AUTH_SOCK:-/dev/null}:/ssh-agent
       # The same private key the client used to reach this host, copied
       # here by server-provision.js's ensureRemoteContainer at deploy time
       # -- ssh's own default identity location, so it's tried automatically
-      # by every outbound ssh call this container makes (the one above,
-      # HostStatsSource), no per-host ssh_config needed. Falls back to
-      # /dev/null (no-op) when the gateway was reached via agent/no explicit
-      # key -- see docs/architecture/remote-server.md.
+      # by every outbound ssh call this container makes (SSHTransport), no
+      # per-daemon ssh_options needed. Falls back to /dev/null (no-op) when
+      # the gateway was reached via agent/no explicit key.
       - ${CTTC_ID_RSA:-/dev/null}:/root/.ssh/id_rsa:ro
-      # Redis's RDB/AOF persistence (see redis_log.py) -- MUST be host-
-      # mounted, not left on the container's writable layer, or a container
-      # recreation (image update, `docker compose down && up`, `docker rm`)
-      # silently loses it. Defaults to a directory beside this compose file;
-      # override with CTTC_REDIS_DATA_DIR for a real deploy that wants this
-      # on a specific disk/mount, same pattern as CTTC_ID_RSA above.
-      # Container-side path matches RedisLog's own Path(__file__).parent-
-      # relative default (/srv/cttc-gateway/redis-data) exactly, so no
-      # --redis-data-dir flag is needed in the image's own ENTRYPOINT.
-      - ${CTTC_REDIS_DATA_DIR:-./redis-data}:/srv/cttc-gateway/redis-data
+      # Redis's RDB persistence (log-sump's redis-server runs `--dir /data`,
+      # matching the image's own VOLUME) -- MUST be host-mounted, not left
+      # on the container's writable layer, or a container recreation
+      # (image update, `docker compose down && up`, `docker rm`) silently
+      # loses it. A distinct default directory name from the old server's
+      # own ./redis-data -- log-sump's redis-server starts with no
+      # --dbfilename override (Redis's own "dump.rdb" default) and an
+      # unrelated keyspace (logsump:* vs. cttc:*), so reusing that
+      # directory would load an old, unrelated RDB file on first boot
+      # rather than starting clean. Override with CTTC_REDIS_DATA_DIR for a
+      # real deploy that wants this on a specific disk/mount.
+      - ${CTTC_REDIS_DATA_DIR:-./log-sump-redis-data}:/data

@@ -6,13 +6,13 @@
 # has (Docker Desktop on Windows/macOS, native Docker on Linux) -- so it
 # only needs building once per release, not once per platform.
 #
-# Always rebuilds from scratch: a stale bundled image (missing server.py
-# changes released as recently as this same session) is a much worse
-# failure mode than a slower release build, and Docker's own layer cache
-# already keeps a same-server, different-run rebuild fast when nothing
-# actually changed. Pass -c/--reuse-cache to explicitly skip rebuilding
-# when cttc-gateway.tar.gz already exists (e.g. iterating on
-# electron-builder packaging only, with no server/ changes at all).
+# Always rebuilds from scratch: a stale bundled image (missing
+# app/server-logsump changes released as recently as this same session) is
+# a much worse failure mode than a slower release build, and Docker's own
+# layer cache already keeps a same-server, different-run rebuild fast when
+# nothing actually changed. Pass -c/--reuse-cache to explicitly skip
+# rebuilding when cttc-gateway.tar.gz already exists (e.g. iterating on
+# electron-builder packaging only, with no server changes at all).
 #
 # Also tags + pushes the image to the registry ref in releases/_repo/image.json
 # (best-effort -- see "Registry push" below). The app's default is still the
@@ -27,7 +27,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
-server_dir="$repo_root/app/server"
+server_dir="$repo_root/app/server-logsump"
 image_json="$repo_root/releases/_repo/image.json"
 out="$script_dir/cttc-gateway.tar.gz"
 
@@ -46,7 +46,7 @@ if [[ "$reuse_cache" -eq 1 && -f "$out" ]]; then
   echo "Server image already built at $out (--reuse-cache: skipping rebuild)."
 else
   echo "Building server image (docker build, linux/amd64)..."
-  docker build --platform linux/amd64 -t cttc-gateway:latest "$server_dir"
+  docker build --platform linux/amd64 -f "$server_dir/docker/Dockerfile" -t cttc-gateway:latest "$server_dir"
 
   echo "Saving + gzipping image (this can take a minute)..."
   docker save cttc-gateway:latest | gzip > "$out"
