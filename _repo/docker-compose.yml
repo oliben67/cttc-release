@@ -4,8 +4,8 @@
 # osteck/log-sump:0.0.1, on Docker Hub), not the fixed "log-sump:latest" a
 # local `docker load` restores -- the app sets $CTTC_IMAGE from image.json
 # before invoking `docker compose up` with this file (see
-# app/lib/server-provision.js). Keep network_mode/volumes in sync by hand
-# with the other two compose files.
+# app/lib/server-provision.js). Keep ports/volumes in sync by hand with the
+# other two compose files.
 services:
   log-sump:
     image: ${CTTC_IMAGE}
@@ -21,17 +21,41 @@ services:
     # its four processes -- confirmed by actually booting this compose file
     # with pid: host during the migration to this image, which fails
     # immediately with "s6-overlay-suexec: fatal: can only run as pid 1".
-    # network_mode: host is still needed, both so this container is
-    # reachable on the host's real network interfaces (the client talks to
-    # it directly over plain HTTP, see docs/architecture/remote-server.md)
-    # and so log_sump.listener's `/proc/net/dev` read (below) reflects the
-    # host's real network counters, not this container's own namespace's.
-    network_mode: host
+    # Also deliberately NOT `network_mode: host` (used until 2026-08-15):
+    # confirmed empirically that it makes Logstash's own outbound
+    # connection to Redis fail intermittently and permanently wedge under
+    # Docker Desktop for Mac's "host networking" feature (needed in the
+    # first place for this container to be reachable at all under plain
+    # `network_mode: host` on Docker Desktop -- without it, 127.0.0.1
+    # inside the container is the Desktop VM's own loopback, not the real
+    # Mac's) -- see BUG-0097's neighboring investigation. Explicit `ports:`
+    # below achieves the same host-reachability without any of that: the
+    # client already always talks over plain HTTP regardless (see
+    # docs/architecture/remote-server.md), and host-level telemetry
+    # (system_stats.py's "proc" source, below) already reads via the
+    # `/proc` bind mount -- a filesystem read, unaffected by which network
+    # namespace this container is in -- so network_mode: host was never
+    # actually required for that either, despite what an earlier version
+    # of this comment claimed.
+    ports:
+      # The gateway API itself -- LAN-reachable, matching this container's
+      # previous network_mode: host exposure (br-NET-004: token-gated, see
+      # LOG_SUMP_GATEWAY__TOKEN below, precisely because this is reachable
+      # by anything that can reach this host, not just loopback). This is
+      # the remote-gateway path (ensureRemoteContainer) -- LAN reachability
+      # is the whole point here, not incidental.
+      - "8765:8765"
+      # Redis inspection (redis-cli, RedisInsight) -- loopback-only,
+      # deliberately not LAN-exposed: unlike 8765, Redis itself has no
+      # password (`--bind 127.0.0.1` inside the container already assumed
+      # "same machine only" under the old network_mode: host too; this
+      # preserves that exact boundary rather than widening it).
+      - "127.0.0.1:6379:6379"
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       # Shared-secret required (as the X-CTTC-Token header) on every HTTP
-      # request once set (br-NET-004) -- this container binds 0.0.0.0 with
-      # network_mode: host above, so without it anything that can reach
+      # request once set (br-NET-004) -- port 8765 above is exposed to the
+      # LAN, not just loopback, so without this anything that can reach
       # this host at all has full unauthenticated API access.
       # CTTC_API_TOKEN is passed through from the invoking shell's env
       # (generated/persisted by main.js's lib/api-token.js at provision
