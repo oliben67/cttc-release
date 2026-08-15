@@ -1,12 +1,12 @@
 # Deployment variant of docker-compose.yml: no `build:` context, because
 # this ships alongside a pre-built image (docker load'd from
-# cttc-gateway.tar.gz) rather than the server sources -- see
+# log-sump.tar.gz) rather than the server sources -- see
 # docs/architecture/remote-server.md. Keep the two files' `image`/
 # `network_mode`/`volumes` in sync by hand; app/server-logsump/docker-
 # compose.yml stays the source-build version, for log-sump's own local dev.
 services:
-  cttc-gateway:
-    image: cttc-gateway:latest
+  log-sump:
+    image: log-sump:latest
     restart: unless-stopped
     # Redis's own graceful-shutdown RDB save needs real time to complete
     # under real data volumes -- Docker's default (10s) is tighter than
@@ -65,14 +65,24 @@ services:
       # daemon's /proc read runs on that remote machine, unaffected by
       # anything here.
       - LOG_SUMP_LISTENER__LOCAL_PROC_ROOT=/host/proc
-      # Mounts this repo's own plugins (app/server-plugins/, baked into the
-      # image by that directory's own Dockerfile -- see its comment) into
-      # log-sump's generic plugin-loading mechanism
-      # (log_sump.server.plugins). log-sump's own image has no idea this
-      # directory exists; it's layered on entirely by this repo's build.
+      # Points log-sump's own generic plugin-loading mechanism
+      # (log_sump.server.plugins) at wherever CTTC_PLUGINS_DIR (below) got
+      # bind-mounted -- log-sump's own image has no idea this directory
+      # exists or what's in it.
       - LOG_SUMP_PLUGINS__DIRECTORY=/opt/cttc-plugins
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      # log-sump-plugin (github.com/oliben67/cttc-log-sump-plugin), cttc's own
+      # client-specific compat routes -- NOT baked into this image at all
+      # (unlike the pre-log-sump-plugin-extraction "cttc-gateway" image,
+      # which had it layered in by a wrapper Dockerfile). Cloned fresh by
+      # app/lib/server-provision.js right before `docker compose up`
+      # (locally, or on the remote host over ssh -- see that module's own
+      # `ensurePluginCheckout`), which sets CTTC_PLUGINS_DIR to that
+      # checkout's own root; its `src/` is what actually holds the plugin
+      # package, matching what LOG_SUMP_PLUGINS__DIRECTORY above expects: a
+      # directory *of* plugin subdirectories, not the plugin itself.
+      - ${CTTC_PLUGINS_DIR}/src:/opt/cttc-plugins:ro
       # Bind mount (not a fresh `mount -t proc`), deliberately: a bind
       # mount exposes the *same* procfs instance the host already mounted
       # in its own root PID namespace, so reads through it reflect the
