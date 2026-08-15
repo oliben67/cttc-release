@@ -1,4 +1,4 @@
 {
-  "image": "osteck/cttc-gateway",
+  "image": "osteck/log-sump",
   "tag": "0.1.0"
 }

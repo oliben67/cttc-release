@@ -1,5 +1,6 @@
 .DS_Store
-_shared/cttc-gateway.tar.gz
+_shared/log-sump.tar.gz
+_shared/log-sump-redis-data/
 windows/cttc-windows-deploy.zip
 macos/cttc-macos-deploy.zip
 linux/cttc-linux-deploy.zip
