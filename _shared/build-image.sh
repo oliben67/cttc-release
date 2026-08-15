@@ -28,6 +28,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 server_dir="$repo_root/app/server-logsump"
+plugins_dir="$repo_root/app/server-plugins"
 image_json="$repo_root/releases/_repo/image.json"
 out="$script_dir/cttc-gateway.tar.gz"
 
@@ -45,8 +46,19 @@ done
 if [[ "$reuse_cache" -eq 1 && -f "$out" ]]; then
   echo "Server image already built at $out (--reuse-cache: skipping rebuild)."
 else
-  echo "Building server image (docker build, linux/amd64)..."
-  docker build --platform linux/amd64 -f "$server_dir/docker/Dockerfile" -t cttc-gateway:latest "$server_dir"
+  echo "Building log-sump's own image (docker build, linux/amd64)..."
+  docker build --platform linux/amd64 -f "$server_dir/docker/Dockerfile" -t log-sump-base:local "$server_dir"
+
+  # A second, separate `docker build` layered on top of log-sump's own
+  # image, not a multi-stage build of the same Dockerfile -- see
+  # app/server-plugins/Dockerfile's own comment on why: log-sump's build
+  # stays completely independent of what plugins any given deployment
+  # bundles.
+  echo "Layering this repo's server plugins on top (docker build, linux/amd64)..."
+  docker build --platform linux/amd64 \
+    --build-arg LOG_SUMP_IMAGE=log-sump-base:local \
+    -f "$plugins_dir/Dockerfile" -t cttc-gateway:latest "$plugins_dir"
+  docker rmi log-sump-base:local > /dev/null 2>&1 || true
 
   echo "Saving + gzipping image (this can take a minute)..."
   docker save cttc-gateway:latest | gzip > "$out"

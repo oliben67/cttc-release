@@ -65,6 +65,12 @@ services:
       # daemon's /proc read runs on that remote machine, unaffected by
       # anything here.
       - LOG_SUMP_LISTENER__LOCAL_PROC_ROOT=/host/proc
+      # Mounts this repo's own plugins (app/server-plugins/, baked into the
+      # image by that directory's own Dockerfile -- see its comment) into
+      # log-sump's generic plugin-loading mechanism
+      # (log_sump.server.plugins). log-sump's own image has no idea this
+      # directory exists; it's layered on entirely by this repo's build.
+      - LOG_SUMP_PLUGINS__DIRECTORY=/opt/cttc-plugins
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # Bind mount (not a fresh `mount -t proc`), deliberately: a bind
