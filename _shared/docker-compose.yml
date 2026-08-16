@@ -97,14 +97,15 @@ services:
       # log-sump-plugin (github.com/oliben67/cttc-log-sump-plugin), cttc's own
       # client-specific compat routes -- NOT baked into this image at all
       # (unlike the pre-log-sump-plugin-extraction "cttc-gateway" image,
-      # which had it layered in by a wrapper Dockerfile). Cloned fresh by
-      # app/lib/server-provision.js right before `docker compose up`
-      # (locally, or on the remote host over ssh -- see that module's own
-      # `ensurePluginCheckout`), which sets CTTC_PLUGINS_DIR to that
-      # checkout's own root; its `src/` is what actually holds the plugin
-      # package, matching what LOG_SUMP_PLUGINS__DIRECTORY above expects: a
-      # directory *of* plugin subdirectories, not the plugin itself.
-      - ${CTTC_PLUGINS_DIR}/src:/opt/cttc-plugins:ro
+      # which had it layered in by a wrapper Dockerfile). Bundled alongside
+      # the CTTC executable instead (app/package.json's extraResources
+      # stages log-sump-plugin's src/ as "plugins"; app/lib/server-provision.js's
+      # bundledPluginsDir() points CTTC_PLUGINS_DIR at it -- copied up over
+      # scp for a remote host, referenced directly for a local one). Already
+      # the directory *of* plugin subdirectories LOG_SUMP_PLUGINS__DIRECTORY
+      # above expects (no further `/src` needed, unlike the git-checkout
+      # layout this replaced).
+      - ${CTTC_PLUGINS_DIR}:/opt/cttc-plugins:ro
       # Bind mount (not a fresh `mount -t proc`), deliberately: a bind
       # mount exposes the *same* procfs instance the host already mounted
       # in its own root PID namespace, so reads through it reflect the
