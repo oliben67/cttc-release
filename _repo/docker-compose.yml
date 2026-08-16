@@ -104,11 +104,14 @@ services:
       # which had it layered in by a wrapper Dockerfile). Bundled alongside
       # the CTTC executable instead (app/package.json's extraResources
       # stages log-sump-plugin's src/ as "plugins"; app/lib/server-provision.js's
-      # bundledPluginsDir() points CTTC_PLUGINS_DIR at it -- copied up over
-      # scp for a remote host, referenced directly for a local one). Already
-      # the directory *of* plugin subdirectories LOG_SUMP_PLUGINS__DIRECTORY
-      # above expects (no further `/src` needed, unlike the git-checkout
-      # layout this replaced).
+      # bundledPluginSourceDir() resolves the log_sump_plugin package
+      # directory itself, deployed as this instance's own plugins/cttc --
+      # copied up over scp for a remote host (<remoteDir>/plugins/cttc),
+      # or into ~/.log-sump/plugins/cttc for the embedded "This machine"
+      # one). CTTC_PLUGINS_DIR is always that deployment's *plugins*
+      # directory (the parent of cttc/) -- already the directory *of*
+      # plugin subdirectories LOG_SUMP_PLUGINS__DIRECTORY above expects, no
+      # further `/src` needed.
       - ${CTTC_PLUGINS_DIR}:/opt/cttc-plugins:ro
       # Bind mount (not a fresh `mount -t proc`), deliberately: a bind
       # mount exposes the *same* procfs instance the host already mounted

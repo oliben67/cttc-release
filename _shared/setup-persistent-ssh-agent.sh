@@ -12,7 +12,7 @@
 #   - installs a systemd --user service that runs `ssh-agent` at a fixed
 #     socket path (survives reboot: `loginctl enable-linger` + WantedBy=
 #     default.target keeps it running without you being logged in)
-#   - writes/updates log-sump/.env with SSH_AUTH_SOCK=<that path>, so
+#   - writes/updates .log-sump/.env with SSH_AUTH_SOCK=<that path>, so
 #     `docker compose up` picks it up on every future run regardless of
 #     which shell/session invokes it (interactive, or the ssh exec CTTC's
 #     "Update server image" / "Run Setup" use) -- this is what actually
@@ -32,7 +32,7 @@ fi
 SOCK="$HOME/.ssh/agent.sock"
 UNIT_DIR="$HOME/.config/systemd/user"
 UNIT="$UNIT_DIR/cttc-ssh-agent.service"
-COMPOSE_DIR="$HOME/log-sump"   # matches server-provision.js's remoteDir
+COMPOSE_DIR="$HOME/.log-sump"   # matches server-provision.js's remoteDir
 
 mkdir -p "$UNIT_DIR" "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
