@@ -1,4 +1,4 @@
 {
-  "image": "osteck/log-sump",
+  "image": "osteck/log-sump-extended",
   "tag": "0.1.0"
 }
