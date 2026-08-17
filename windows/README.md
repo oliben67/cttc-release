@@ -30,10 +30,14 @@ Shared across all platforms, one level up:
 ```
 ../_shared/       builds + saves the server image once (identical across
                  Windows/macOS/Linux -- see ../_shared/build-image.sh),
-                 and holds build-bundle.sh, the script that drives this
-                 platform's release build (see "How a release is cut")
+                 and holds build-bundle.sh (drives this platform's release
+                 build) and bump-release-num.sh/publish-release.sh (tag +
+                 GitHub Release publishing -- see "How a release is cut")
 ../_repo/         image.json + docker-compose.yml for the "docker pull from
                  a registry" path (see "Two ways to get the image" below)
+../release-num.txt  a per-branch monotonic build counter -- this branch's
+                 own count, independent of macos'/linux's (see "How a
+                 release is cut")
 ```
 
 `cttc-windows-deploy.zip` itself is always gitignored (an intermediate
@@ -145,3 +149,26 @@ which:
 
 Commit `CTTC Setup.exe` in this (`cttc-release`) repo, then bump the
 `releases` submodule pointer in the main repo.
+
+## Build number + GitHub Releases
+
+`task build:release:win` (and `:mac`/`:linux`) wraps the above with two
+more steps, both in `app/Taskfile.yml`:
+
+1. **Before** building: `../_shared/bump-release-num.sh` increments
+   `../release-num.txt` by 1 (missing/empty reads as 0, so the first ever
+   run yields 1) and writes it back -- this branch's own counter, not
+   shared with `macos`/`linux` (each is an independent branch history
+   here, so a truly shared counter would need extra cross-branch
+   plumbing; not worth it for a build number).
+2. **After** committing + pushing the rebuilt `CTTC Setup.exe`:
+   `../_shared/publish-release.sh -win "CTTC Setup.exe" ../windows` reads
+   the app version `V` from `app/package.json` and the just-bumped `n`,
+   tags this repo's `HEAD` as `V-winN` (e.g. `0.2.0-win4`), pushes the
+   tag, and creates a GitHub Release titled `vV-winN` on
+   `oliben67/cttc-release` with a `CTTC.zip` (containing `CTTC Setup.exe`
+   + `README.md`, zipped fresh from what's sitting in this directory)
+   attached as the release asset. Requires `gh` authenticated with
+   `contents: write` on `cttc-release`; fails loudly rather than
+   publishing silently-skipped if it isn't. Refuses to clobber a tag that
+   already exists.
