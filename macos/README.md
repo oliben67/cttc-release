@@ -9,12 +9,10 @@ baked in, only the registry reference in `../_repo/image.json`.
 ```
 build-bundle.sh    builds (via ../_shared/build-image.sh) the server image
                  (to keep the registry ref current) and packages CTTC.dmg
-cttc-setup.sh   the one (and only) script an end user ever runs -- a
-                 no-op if CTTC.dmg is already there directly, otherwise
-                 reassembles + extracts it from the .partNNN chunks
-CTTC.dmg         present directly if under GitHub's 100MB limit (usually
-                 the case), OR:
-cttc-macos-deploy.zip.partNNN   chunks, only if the .dmg came out too big
+cttc-setup.sh   legacy: used to reassemble a chunked .dmg before Git LFS
+                 took over that job -- always a no-op today.
+CTTC.dmg         the built release, committed directly via Git LFS (see
+                 ../.gitattributes) -- no more size-based chunking.
 ```
 
 Cut a release from `app/`:
@@ -23,6 +21,5 @@ Cut a release from `app/`:
 npm run release:mac          # or: task build:release:mac
 ```
 
-End users: if `CTTC.dmg` is there directly, just open it. Otherwise
-download `cttc-setup.sh` + the `.partNNN` files, run `./cttc-setup.sh`,
-then open the extracted `CTTC.dmg`.
+End users: just open `CTTC.dmg` directly -- nothing to reassemble or
+extract first.
