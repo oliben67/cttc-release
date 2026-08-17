@@ -1,5 +1,5 @@
 .DS_Store
-_shared/log-sump.tar.gz
+_shared/log-sump-extended.tar.gz
 _shared/log-sump-redis-data/
 windows/cttc-windows-deploy.zip
 macos/cttc-macos-deploy.zip
