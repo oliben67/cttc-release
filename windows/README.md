@@ -8,22 +8,30 @@ writeup, cross-linked from `../README.md`.
 
 ## Layout
 
+This directory is deploy-only -- it holds nothing but what actually ships
+to an end user:
+
 ```
-build-bundle.sh    builds (via ../_shared/build-image.sh) the server image
-                 and packages it into this platform's installer (see "How
-                 a release is cut" below)
-CTTC Setup.ps1  legacy: used to reassemble a chunked installer before Git
-                 LFS took over that job (see "How this all fits together"
-                 below) -- kept for now, always a no-op today.
 CTTC Setup.exe   the built release, committed directly via Git LFS (see
-                 ../.gitattributes) -- no more size-based chunking.
+                 ../.gitattributes) -- no size-based chunking.
 ```
+
+There used to also be a `CTTC Setup.ps1` here (legacy: reassembled a
+chunked installer before Git LFS took over that job) and a
+`build-bundle.sh` (the build script, not a deployed artifact). Both are
+gone from this directory now: the `.ps1` reassembly logic became
+permanently dead code once chunking stopped happening at all, so it was
+removed outright; `build-bundle.sh` moved to `../_shared/` (see "How a
+release is cut" below) since it's a build-time tool, not something an end
+user needs.
 
 Shared across all platforms, one level up:
 
 ```
 ../_shared/       builds + saves the server image once (identical across
-                 Windows/macOS/Linux -- see ../_shared/build-image.sh)
+                 Windows/macOS/Linux -- see ../_shared/build-image.sh),
+                 and holds build-bundle.sh, the script that drives this
+                 platform's release build (see "How a release is cut")
 ../_repo/         image.json + docker-compose.yml for the "docker pull from
                  a registry" path (see "Two ways to get the image" below)
 ```
@@ -37,8 +45,8 @@ via Git LFS (`../.gitattributes`) rather than a plain git blob -- GitHub's
 
 ## Slim vs bundled
 
-`build-bundle.sh` asks (or takes `--bundle`/`--slim`) which installer to
-build:
+`../_shared/build-bundle.sh` asks (or takes `--bundle`/`--slim`) which
+installer to build:
 
 - **Bundled** -- the server image tarball is baked into `CTTC Setup.exe`
   (~600MB total). Works fully offline, no registry needed.
@@ -82,10 +90,11 @@ image:
 There's no separate "deploy" step, staging step, or script:
 
 1. Run `CTTC Setup.exe` directly, like any normal Windows installer --
-   nothing to reassemble or extract first. (`CTTC Setup.ps1` still exists
-   from when installers over 100MB shipped as `.partNNN` chunks that
-   needed reassembling before Git LFS started tracking them directly; it's
-   a no-op today since `CTTC Setup.exe` is always present as a real file.)
+   nothing to reassemble or extract first. (A `CTTC Setup.ps1` used to
+   ship alongside it for exactly that reassembly, back when installers
+   over 100MB shipped as `.partNNN` chunks; once Git LFS started tracking
+   `CTTC Setup.exe` directly, that script never had anything left to do,
+   so it was removed.)
 2. The server image is already inside it, or a registry reference is (see
    "Two ways to get the image" above) -- nothing else needs installing or
    copying first.
@@ -115,7 +124,7 @@ npm run release:win          # or: task build:release:win
 ```
 
 (`release:mac` / `release:linux` for the other two platforms -- all three
-share the same image build step.) This runs `windows/build-bundle.sh`,
+share the same image build step.) This runs `../_shared/build-bundle.sh`,
 which:
 - asks (or takes `--bundle`/`--slim`) whether to bundle the image or just
   reference the registry (see "Slim vs bundled" above),

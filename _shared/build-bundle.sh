@@ -4,14 +4,16 @@
 # registry needed, but a bigger installer) or "slim" (just a reference to
 # the registry image in releases/_repo/image.json -- smaller installer, but
 # depends on that registry actually being reachable/published). Then hands
-# off to releases/_shared/finalize-artifact.sh, which commits the installer
-# directly if it's under GitHub's 100MB blob limit, or zips + chunks it if
-# not -- either way CTTC needs no install-time staging step to find the
-# image: it reads its own bundled resources directly (see
-# app/lib/server-provision.js).
+# off to finalize-artifact.sh (same directory), which just copies the
+# installer into place under its real name -- releases/windows/ is
+# deploy-only (see ../.gitattributes: CTTC Setup.exe is tracked via Git
+# LFS, so GitHub's 100MB blob limit doesn't constrain it), this script and
+# finalize-artifact.sh live here in _shared/ instead. CTTC needs no
+# install-time staging step to find the image either way: it reads its own
+# bundled resources directly (see app/lib/server-provision.js).
 #
 # Usage (from anywhere):
-#   releases/windows/build-bundle.sh [--bundle|--slim] [-c|--reuse-cache]
+#   releases/_shared/build-bundle.sh [--bundle|--slim] [-c|--reuse-cache]
 #   (Windows always defaults to --bundle, no prompt -- pass --slim
 #   explicitly to override. The shared server image is rebuilt from
 #   scratch by default -- pass --reuse-cache to skip that when iterating
@@ -24,6 +26,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 app_dir="$repo_root/app"
+dest_dir="$repo_root/releases/windows"
 
 mode=""
 image_args=()
@@ -67,9 +70,8 @@ if [[ -z "$installer" ]]; then
 fi
 echo "Using installer: $installer"
 
-"$repo_root/releases/_shared/finalize-artifact.sh" "$installer" "$script_dir" "CTTC Setup.exe" "cttc-windows-deploy"
+"$script_dir/finalize-artifact.sh" "$installer" "$dest_dir" "CTTC Setup.exe" "cttc-windows-deploy"
 
 echo ""
-echo "If chunked: commit cttc-windows-deploy.zip.part* (not the zip itself, which is"
-echo "gitignored) and reassemble with CTTC Setup.ps1. If committed directly:"
-echo "commit 'CTTC Setup.exe' as-is -- nothing to reassemble."
+echo "Commit '$dest_dir/CTTC Setup.exe' as-is -- Git LFS (../.gitattributes) handles"
+echo "whatever size it ends up, no zipping or chunking needed."

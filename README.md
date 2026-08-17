@@ -13,23 +13,20 @@ image tarballs).
 - **`_repo/`** -- `image.json` + a docker-compose variant for the
   registry-pull path (an alternative to the baked-in tarball -- see
   `windows/README.md`'s "Two ways to get the image").
-- **`windows/`** -- packaged as "bundled" (image tarball baked in, always
-  chunked) or "slim" (registry reference only, usually fits under GitHub's
-  100MB limit directly) -- see `windows/README.md`'s "Slim vs bundled".
+- **`windows/`** -- packaged as "bundled" (image tarball baked in) or
+  "slim" (registry reference only, smaller) -- either way committed
+  directly via Git LFS, no chunking -- see `windows/README.md`'s "Slim vs
+  bundled". Deploy-only: holds just `CTTC Setup.exe`, nothing build-time
+  (see `../_shared/build-bundle.sh`).
 - **`macos/`**, **`linux/`** -- slim-only for now (their base Electron
   package alone is already close to/over the 100MB limit).
 
 See [`windows/README.md`](windows/README.md) for the full breakdown -- the
-same design applies to all three, just with a different installer format
-and a shell script instead of PowerShell for macOS/Linux's
-`cttc-setup.sh`.
+same design applies to all three, just with a different installer format.
 
 ## For end users
 
-Pick your platform's folder. If the installer (`CTTC Setup.exe` /
-`CTTC.dmg` / `CTTC.AppImage`) is sitting there directly, just run/open it
--- nothing else to do. Otherwise download `CTTC Setup.ps1`/
-`cttc-setup.sh` and its `cttc-<platform>-deploy.zip.partNNN` files, run
-it, then run/open whatever it extracts -- see
-[`windows/README.md`](windows/README.md) for what that script actually
-does. Nothing else in this repo needs to be downloaded.
+Pick your platform's folder and run/open the installer sitting there
+directly (`CTTC Setup.exe` / `CTTC.dmg` / `CTTC.AppImage`) -- nothing else
+to do, nothing else in this repo needs to be downloaded. See
+[`windows/README.md`](windows/README.md) for the full breakdown.
