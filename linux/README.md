@@ -33,5 +33,14 @@ npm run release:linux          # or: task build:release:linux
 via `../_shared/build-image.sh`, packages `CTTC.AppImage`, and hands it to
 `../_shared/finalize-artifact.sh` to commit here.)
 
+`task build:release:linux` wraps that with two more steps (see
+`../windows/README.md`'s "Build number + GitHub Releases" for the full
+writeup): `../_shared/bump-release-num.sh` bumps this branch's own
+`../release-num.txt` first, and after the commit is pushed,
+`../_shared/publish-release.sh -linux "CTTC.AppImage" ../linux` tags it
+`<app-version>-linuxN` and publishes a GitHub Release on
+`oliben67/cttc-release` with `CTTC.zip` (this dir's `CTTC.AppImage` +
+`README.md`) attached.
+
 End users: just run `CTTC.AppImage` directly (`chmod +x` if needed) --
 nothing to reassemble or extract first.
