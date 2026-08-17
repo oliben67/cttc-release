@@ -10,13 +10,11 @@ baked in, only the registry reference in `../_repo/image.json`.
 build-bundle.sh    builds (via ../_shared/build-image.sh) the server image
                  (to keep the registry ref current) and packages
                  CTTC.AppImage
-cttc-setup.sh   the one (and only) script an end user ever runs -- a
-                 no-op if CTTC.AppImage is already there directly,
-                 otherwise reassembles + extracts it from the .partNNN
-                 chunks
-CTTC.AppImage    present directly if under GitHub's 100MB limit, OR:
-cttc-linux-deploy.zip.partNNN   chunks, only if the AppImage came out too
-                 big
+cttc-setup.sh   legacy: used to reassemble a chunked AppImage before Git
+                 LFS took over that job -- always a no-op today.
+CTTC.AppImage    the built release, committed directly via Git LFS (see
+                 ../.gitattributes's *.AppImage pattern) -- no more
+                 size-based chunking.
 ```
 
 Cut a release from `app/`:
@@ -25,6 +23,5 @@ Cut a release from `app/`:
 npm run release:linux          # or: task build:release:linux
 ```
 
-End users: if `CTTC.AppImage` is there directly, just run it (`chmod +x`
-if needed). Otherwise download `cttc-setup.sh` + the `.partNNN` files,
-run `./cttc-setup.sh`, then run the extracted `CTTC.AppImage`.
+End users: just run `CTTC.AppImage` directly (`chmod +x` if needed) --
+nothing to reassemble or extract first.
