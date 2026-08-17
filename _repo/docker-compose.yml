@@ -1,11 +1,11 @@
 # Registry-pull variant of docker-compose.yml (see ../_shared/docker-compose.yml
 # for the offline/docker-load variant). image is parameterized because a
 # pulled image is named/tagged from image.json (e.g.
-# osteck/log-sump:0.0.1, on Docker Hub), not the fixed "log-sump:latest" a
-# local `docker load` restores -- the app sets $CTTC_IMAGE from image.json
-# before invoking `docker compose up` with this file (see
-# app/lib/server-provision.js). Keep ports/volumes in sync by hand with the
-# other two compose files.
+# osteck/log-sump-extended:0.0.1, on Docker Hub), not the fixed
+# "log-sump-extended:latest" a local `docker load` restores -- the app
+# sets $CTTC_IMAGE from image.json before invoking `docker compose up`
+# with this file (see app/lib/server-provision.js). Keep ports/volumes in
+# sync by hand with the other two compose files.
 services:
   log-sump:
     image: ${CTTC_IMAGE}
@@ -91,24 +91,8 @@ services:
       # daemon's /proc read runs on that remote machine, unaffected by
       # anything here.
       - LOG_SUMP_LISTENER__LOCAL_PROC_ROOT=/host/proc
-      # Points log-sump's own generic plugin-loading mechanism
-      # (log_sump.server.plugins) at wherever CTTC_PLUGINS_DIR (below) got
-      # bind-mounted -- log-sump's own image has no idea this directory
-      # exists or what's in it.
-      - LOG_SUMP_PLUGINS__DIRECTORY=/opt/cttc-plugins
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # log-sump-plugin (github.com/oliben67/cttc-log-sump-plugin), cttc's own
-      # client-specific compat routes -- NOT baked into this image at all
-      # (unlike the pre-log-sump-plugin-extraction "cttc-gateway" image,
-      # which had it layered in by a wrapper Dockerfile). Cloned fresh by
-      # app/lib/server-provision.js right before `docker compose up`
-      # (locally, or on the remote host over ssh -- see that module's own
-      # `ensurePluginCheckout`), which sets CTTC_PLUGINS_DIR to that
-      # checkout's own root; its `src/` is what actually holds the plugin
-      # package, matching what LOG_SUMP_PLUGINS__DIRECTORY above expects: a
-      # directory *of* plugin subdirectories, not the plugin itself.
-      - ${CTTC_PLUGINS_DIR}/src:/opt/cttc-plugins:ro
       # Bind mount (not a fresh `mount -t proc`), deliberately: a bind
       # mount exposes the *same* procfs instance the host already mounted
       # in its own root PID namespace, so reads through it reflect the
