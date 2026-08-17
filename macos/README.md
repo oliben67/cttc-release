@@ -32,5 +32,14 @@ npm run release:mac          # or: task build:release:mac
 via `../_shared/build-image.sh`, packages `CTTC.dmg`, and hands it to
 `../_shared/finalize-artifact.sh` to commit here.)
 
+`task build:release:mac` wraps that with two more steps (see
+`../windows/README.md`'s "Build number + GitHub Releases" for the full
+writeup): `../_shared/bump-release-num.sh` bumps this branch's own
+`../release-num.txt` first, and after the commit is pushed,
+`../_shared/publish-release.sh -mac "CTTC.dmg" ../macos` tags it
+`<app-version>-macN` and publishes a GitHub Release on
+`oliben67/cttc-release` with `CTTC.zip` (this dir's `CTTC.dmg` +
+`README.md`) attached.
+
 End users: just open `CTTC.dmg` directly -- nothing to reassemble or
 extract first.
