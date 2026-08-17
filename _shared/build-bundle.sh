@@ -3,11 +3,14 @@
 # (releases/_repo/image.json) -- no tarball baked in, unlike Windows (the
 # shared server image is still built here so the registry ref stays
 # current -- see releases/_shared/build-image.sh -- just not embedded).
-# releases/_shared/finalize-artifact.sh commits the AppImage directly if
-# it's under GitHub's 100MB blob limit, or zips + chunks it if not.
+# Hands off to finalize-artifact.sh (same directory), which just copies
+# the AppImage into place under its real name -- releases/linux/ is
+# deploy-only (see ../.gitattributes: CTTC.AppImage is tracked via Git
+# LFS, so GitHub's 100MB blob limit doesn't constrain it), this script and
+# finalize-artifact.sh live here in _shared/ instead.
 #
 # Usage (from anywhere):
-#   releases/linux/build-bundle.sh [-c|--reuse-cache]
+#   releases/_shared/build-bundle.sh [-c|--reuse-cache]
 #   (the shared server image is rebuilt from scratch by default -- pass
 #   --reuse-cache to skip that when iterating on packaging only, with no
 #   server/ changes at all)
@@ -19,8 +22,9 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 app_dir="$repo_root/app"
+dest_dir="$repo_root/releases/linux"
 
-"$repo_root/releases/_shared/build-image.sh" "$@"
+"$script_dir/build-image.sh" "$@"
 
 echo "Building the Linux AppImage (registry image reference only, no bundled tarball)..."
 ( cd "$app_dir" && npm run dist:linux )
@@ -33,10 +37,9 @@ fi
 echo "Using AppImage: $installer"
 
 chmod +x "$installer"
-"$repo_root/releases/_shared/finalize-artifact.sh" "$installer" "$script_dir" "CTTC.AppImage" "cttc-linux-deploy"
-chmod +x "$script_dir/CTTC.AppImage" 2>/dev/null || true
+"$script_dir/finalize-artifact.sh" "$installer" "$dest_dir" "CTTC.AppImage" "cttc-linux-deploy"
+chmod +x "$dest_dir/CTTC.AppImage" 2>/dev/null || true
 
 echo ""
-echo "If chunked: commit cttc-linux-deploy.zip.part* (not the zip itself, which is"
-echo "gitignored) and reassemble with cttc-setup.sh. If committed directly:"
-echo "commit 'CTTC.AppImage' as-is -- nothing to reassemble."
+echo "Commit '$dest_dir/CTTC.AppImage' as-is -- Git LFS (../.gitattributes) handles"
+echo "whatever size it ends up, no zipping or chunking needed."
