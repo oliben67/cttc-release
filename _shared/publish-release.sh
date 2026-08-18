@@ -78,10 +78,18 @@ cp "$dest_dir/README.md" "$zip_dir/README.md"
 ( cd "$zip_dir" && zip -q "CTTC.zip" "$installer_name" "README.md" )
 
 echo "Creating GitHub Release v$tag ..."
+# --generate-notes: without an explicit --notes/--notes-file too, gh release
+# create opens an interactive editor prompt for release notes when run from
+# a real terminal (task build:release:win always is) -- this task must run
+# start-to-finish unattended, so every field gets a default here rather
+# than being left for gh to ask about. GitHub's auto-generated notes (the
+# same "Generate release notes" button does) are a reasonable default: a
+# commit-log summary since the previous tag, not blank/meaningless content.
 gh release create "$tag" \
   --repo oliben67/cttc-release \
   --title "v$tag" \
   --target "$sha" \
+  --generate-notes \
   "$zip_dir/CTTC.zip"
 
 echo "Published: https://github.com/oliben67/cttc-release/releases/tag/$tag"
