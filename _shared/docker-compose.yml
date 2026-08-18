@@ -47,8 +47,17 @@ services:
       # deliberately not LAN-exposed: unlike 8765, Redis itself has no
       # password (`--bind 127.0.0.1` inside the container already assumed
       # "same machine only" under the old network_mode: host too; this
-      # preserves that exact boundary rather than widening it).
-      - "127.0.0.1:6379:6379"
+      # preserves that exact boundary rather than widening it). Not
+      # Redis's own IANA default (6379) -- shifted so this doesn't collide
+      # with a developer's own locally-running Redis, or another log-sump/
+      # cttc deployment's, on the same machine. Configurable
+      # (LOG_SUMP_REDIS_PORT, a host-shell/compose-level var, distinct
+      # from the LOG_SUMP_REDIS__PORT below that's passed *into* the
+      # container -- same split as CTTC_REDIS_DATA_DIR/CTTC_ID_RSA); both
+      # sides of the mapping must match, since redis-server only listens
+      # on the one port it was actually told to bind (config.py's
+      # RedisConfig.port default, same 16379).
+      - "127.0.0.1:${LOG_SUMP_REDIS_PORT:-16379}:${LOG_SUMP_REDIS_PORT:-16379}"
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       # Shared-secret required (as the X-CTTC-Token header) on every HTTP
@@ -89,6 +98,10 @@ services:
       # daemon's /proc read runs on that remote machine, unaffected by
       # anything here.
       - LOG_SUMP_LISTENER__LOCAL_PROC_ROOT=/host/proc
+      # Must match the port published above -- redis-server (supervisor/
+      # s6-rc.d/redis/run, app/server-logsump) only binds to whatever this
+      # says, defaulting the same way if unset.
+      - LOG_SUMP_REDIS__PORT=${LOG_SUMP_REDIS_PORT:-16379}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # Bind mount (not a fresh `mount -t proc`), deliberately: a bind
