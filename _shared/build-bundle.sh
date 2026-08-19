@@ -13,11 +13,20 @@
 # bundled resources directly (see app/lib/server-provision.js).
 #
 # Usage (from anywhere):
-#   releases/_shared/build-bundle.sh [--bundle|--slim] [-c|--reuse-cache]
+#   releases/_shared/build-bundle.sh [--bundle|--slim] [-c|--reuse-cache] [-c.<path>=<value> ...]
 #   (Windows always defaults to --bundle, no prompt -- pass --slim
 #   explicitly to override. The shared server image is rebuilt from
 #   scratch by default -- pass --reuse-cache to skip that when iterating
-#   on packaging only, with no server/ changes at all.)
+#   on packaging only, with no server/ changes at all. Any -c.<path>=<value>
+#   argument -- electron-builder's own CLI config-override syntax, e.g.
+#   -c.win.azureSignOptions.endpoint=... for code-signing -- is forwarded
+#   verbatim to the underlying `npm run dist:win`/`dist:win:slim` call,
+#   letting a caller like the signed-release CI workflow inject secrets at
+#   build time without ever writing them into a committed config file.
+#   Coincidental overlap with this script's own bare -c/--reuse-cache: the
+#   two are unambiguous in practice (bash's case matching requires a
+#   literal "." after -c for the electron-builder form), but don't confuse
+#   them.)
 #
 # Or via the Task/npm entry point, from app/:
 #   npm run release:win        # or: task build:release:win
@@ -30,12 +39,14 @@ dest_dir="$repo_root/releases/windows"
 
 mode=""
 image_args=()
+builder_args=()
 for arg in "$@"; do
   case "$arg" in
     --bundle) mode="bundle" ;;
     --slim) mode="slim" ;;
     -c|--reuse-cache) image_args+=(--reuse-cache) ;;
     -f|--force) ;; # kept as a no-op -- rebuilding is the default now
+    -c.*) builder_args+=("$arg") ;;
     *) echo "unknown argument: $arg" >&2; exit 1 ;;
   esac
 done
@@ -57,10 +68,18 @@ fi
 
 if [[ "$mode" == "bundle" ]]; then
   echo "Building the Windows installer (embeds the shared image as a resource)..."
-  ( cd "$app_dir" && npm run dist:win )
+  if [[ ${#builder_args[@]} -gt 0 ]]; then
+    ( cd "$app_dir" && npm run dist:win -- "${builder_args[@]}" )
+  else
+    ( cd "$app_dir" && npm run dist:win )
+  fi
 else
   echo "Building the Windows installer (registry image reference only, no bundled tarball)..."
-  ( cd "$app_dir" && npm run dist:win:slim )
+  if [[ ${#builder_args[@]} -gt 0 ]]; then
+    ( cd "$app_dir" && npm run dist:win:slim -- "${builder_args[@]}" )
+  else
+    ( cd "$app_dir" && npm run dist:win:slim )
+  fi
 fi
 
 installer="$(find "$app_dir/dist" -maxdepth 1 -name "CTTC Setup *.exe" ! -name "*.blockmap" | sort -V | tail -1)"

@@ -68,29 +68,45 @@ else
   echo "Wrote $out"
 fi
 
-# A --reuse-cache run skips the build above, so log-sump-extended:latest may not be
-# tagged locally even though $out exists -- load it back from the tarball
-# so the push below always has something to push, every run, regardless of
-# cache state.
-if ! docker image inspect log-sump-extended:latest > /dev/null 2>&1; then
-  echo "Loading cached image from $out for the registry push..."
-  docker load -i "$out"
-fi
-
-# -- Registry push (best-effort, but always attempted -- see this script's
-# own module comment: this actually succeeds, and publishes, whenever
-# you're already logged in) ---------------------------------------------
-# Requires being logged in to the registry already (Docker Hub by default --
-# `docker login` -- or whatever registry releases/_repo/image.json points
-# at), which isn't assumed here, so a failure is a warning, not a build
-# failure.
-full_ref="$(node -e "const i = require('$image_json'); console.log(\`\${i.image}:\${i.tag}\`)")"
-echo "Tagging + pushing to $full_ref ..."
-docker tag log-sump-extended:latest "$full_ref"
-if docker push "$full_ref"; then
-  echo "Pushed $full_ref"
+# The registry push below needs a real, usable Docker daemon (linux/amd64
+# image load/tag/push) -- true on every platform this script is normally
+# run on (Docker Desktop on Windows/macOS, native Docker on Linux), but
+# NOT guaranteed on a Windows CI runner, which may have only Windows-
+# container support or no daemon reachable at all. That's fine: a caller
+# in that position (the signed-release CI workflow's Windows job) only
+# ever needs the offline tarball at $out, already built by an earlier
+# Linux job and reused here via --reuse-cache -- the registry push is a
+# separate, genuinely optional convenience on top, so skip it outright
+# rather than letting `docker load`/`tag`/`push` hard-fail the whole build
+# the way they would today (unlike the push itself, these aren't wrapped
+# in their own tolerance).
+if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+  echo "docker not available/usable here -- skipping the registry tag/push (the offline tarball at $out is already in place, which is all a downstream electron-builder packaging step needs)." >&2
 else
-  echo "WARNING: could not push $full_ref -- log in first (docker login) if you want the registry path kept up to date. Continuing with the offline tarball only." >&2
-fi
+  # A --reuse-cache run skips the build above, so log-sump-extended:latest may
+  # not be tagged locally even though $out exists -- load it back from the
+  # tarball so the push below always has something to push, every run,
+  # regardless of cache state.
+  if ! docker image inspect log-sump-extended:latest > /dev/null 2>&1; then
+    echo "Loading cached image from $out for the registry push..."
+    docker load -i "$out"
+  fi
 
-docker rmi log-sump-extended:latest > /dev/null 2>&1 || true
+  # -- Registry push (best-effort, but always attempted -- see this script's
+  # own module comment: this actually succeeds, and publishes, whenever
+  # you're already logged in) -------------------------------------------
+  # Requires being logged in to the registry already (Docker Hub by default --
+  # `docker login` -- or whatever registry releases/_repo/image.json points
+  # at), which isn't assumed here, so a failure is a warning, not a build
+  # failure.
+  full_ref="$(node -e "const i = require('$image_json'); console.log(\`\${i.image}:\${i.tag}\`)")"
+  echo "Tagging + pushing to $full_ref ..."
+  docker tag log-sump-extended:latest "$full_ref"
+  if docker push "$full_ref"; then
+    echo "Pushed $full_ref"
+  else
+    echo "WARNING: could not push $full_ref -- log in first (docker login) if you want the registry path kept up to date. Continuing with the offline tarball only." >&2
+  fi
+
+  docker rmi log-sump-extended:latest > /dev/null 2>&1 || true
+fi
